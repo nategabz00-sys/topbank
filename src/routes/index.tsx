@@ -1,0 +1,356 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import {
+  Eye,
+  EyeOff,
+  Moon,
+  Sun,
+  Send,
+  Receipt,
+  QrCode,
+  ScanLine,
+  Bell,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Coffee,
+  Sparkles,
+  TrendingUp,
+  ChevronRight,
+} from "lucide-react";
+import { MobileShell } from "@/components/mobile-shell";
+import { useTheme } from "@/components/theme-provider";
+import { cn } from "@/lib/utils";
+
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Top Bank — Smarter banking, smarter saving" },
+      {
+        name: "description",
+        content:
+          "Manage your money, track savings challenges, and pay anyone in seconds with Top Bank.",
+      },
+      { property: "og:title", content: "Top Bank — Smarter banking, smarter saving" },
+      {
+        property: "og:description",
+        content:
+          "Manage your money, track savings challenges, and pay anyone in seconds with Top Bank.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: Dashboard,
+});
+
+const quickActions = [
+  { icon: Send, label: "Transfer", to: "/transfer" as const },
+  { icon: Receipt, label: "Bills", to: "/transfer" as const },
+  { icon: QrCode, label: "QR Pay", to: "/transfer" as const },
+  { icon: ScanLine, label: "Scan", to: "/transfer" as const },
+];
+
+const transactions = [
+  {
+    id: 1,
+    name: "Starbucks Reserve",
+    cat: "Coffee & Snacks",
+    amount: -285,
+    time: "Today · 9:12 AM",
+    in: false,
+  },
+  { id: 2, name: "Salary — Acme Corp", cat: "Income", amount: 52000, time: "Yesterday", in: true },
+  { id: 3, name: "Grab Ride", cat: "Transport", amount: -142, time: "Yesterday", in: false },
+  { id: 4, name: "Round-Up Savings", cat: "Auto-save", amount: -18, time: "Mon", in: false },
+];
+
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  return (
+    <button
+      onClick={toggle}
+      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      style={{ boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)" }}
+    >
+      {theme === "dark" ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
+    </button>
+  );
+}
+
+function Dashboard() {
+  const [hidden, setHidden] = useState(false);
+
+  return (
+    <MobileShell>
+      <div className="bg-[#FFF8F2] dark:bg-background min-h-full">
+        {/* Custom non-sticky header */}
+        <div className="px-5 pt-4">
+          <div className="flex items-center justify-between" style={{ height: 72 }}>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div
+                  className="flex h-12 w-12 items-center justify-center rounded-full"
+                  style={{ background: "linear-gradient(135deg,#FF9A2F,#FFC78A)" }}
+                >
+                  <span className="text-white font-semibold">SM</span>
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald ring-2 ring-white" />
+              </div>
+              <div>
+                <p className="text-sm" style={{ color: "#8A8A8A" }}>
+                  Welcome back
+                </p>
+                <h2 className="text-lg font-bold" style={{ color: "#1F2937" }}>
+                  Shaire Mae
+                </h2>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/settings"
+                aria-label="Notifications"
+                className="relative flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Bell className="h-4.5 w-4.5" />
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emerald" />
+              </Link>
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+
+        {/* Balance card */}
+        <section className="px-5 mt-3">
+          <div
+            className="relative overflow-hidden p-5 text-white"
+            style={{
+              borderRadius: 32,
+              background: "linear-gradient(135deg,#FFC78A 0%,#FF9A2F 60%,#F97316 100%)",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                right: -48,
+                top: -48,
+                width: 260,
+                height: 260,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(closest-side, rgba(249,115,22,0.18), rgba(249,115,22,0) 60%)",
+                filter: "blur(28px)",
+              }}
+            />
+
+            <button
+              aria-label="Favorite account"
+              className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-white"
+              style={{ boxShadow: "0 6px 18px rgba(249,115,22,0.18)" }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                  fill="#F97316"
+                />
+              </svg>
+            </button>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium tracking-widest text-white/90 uppercase">
+                  TOPBANK
+                </p>
+                <p className="text-xs text-white/90">Payroll Ko Individual</p>
+              </div>
+              <div style={{ width: 36 }} />
+            </div>
+
+            <div className="mt-4">
+              <div className="flex items-center gap-2">
+                <p className="text-[11px] text-white/90 uppercase tracking-wider">
+                  CURRENT BALANCE
+                </p>
+                <button
+                  onClick={() => setHidden((v) => !v)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20"
+                  aria-label={hidden ? "Show balance" : "Hide balance"}
+                >
+                  {hidden ? (
+                    <EyeOff className="h-4 w-4 text-white" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-white" />
+                  )}
+                </button>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-5xl font-extrabold tracking-tight tabular-nums">
+                  {hidden ? "••••" : "82"}
+                </span>
+                <span className="text-lg font-semibold text-white/90">{hidden ? "" : ".00"}</span>
+                <span className="ml-2 text-sm font-medium">PHP</span>
+              </div>
+
+              <div className="mt-6 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] text-white/80 uppercase tracking-wider">Card holder</p>
+                  <p className="text-sm font-semibold mt-1">SHAIRE MAE</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
+                  </div>
+                  <p className="text-[13px] font-semibold tabular-nums">6038</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Quick actions */}
+        <section className="px-5 mt-6">
+          <div className="flex justify-between gap-3">
+            {quickActions.map(({ icon: Icon, label, to }) => (
+              <Link key={label} to={to} className="flex-1">
+                <div className="flex flex-col items-center">
+                  <div
+                    className="flex h-16 w-16 items-center justify-center rounded-4xl bg-white"
+                    style={{
+                      boxShadow: "0 6px 18px rgba(15, 23, 42, 0.06)",
+                      border: "1px solid #ECECEC",
+                    }}
+                  >
+                    <span
+                      className="flex h-9 w-9 items-center justify-center rounded-full"
+                      style={{ background: "#F6EEE8" }}
+                    >
+                      <Icon className="h-5 w-5" strokeWidth={2.2} style={{ color: "#3A2F2A" }} />
+                    </span>
+                  </div>
+                  <span className="mt-2 text-[12px] font-medium" style={{ color: "#8A8A8A" }}>
+                    {label}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Promo carousel (unchanged) */}
+        <section className="mt-6">
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
+            {[
+              { title: "Earn 5% p.a.", desc: "Time Deposit promo", tone: "brand" },
+              { title: "Zero fees", desc: "Send abroad free · 30d", tone: "emerald" },
+              { title: "Cashback ×2", desc: "Weekend swipes", tone: "brand" },
+            ].map((p, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "snap-start shrink-0 w-[78%] rounded-2xl p-4 shadow-card",
+                  p.tone === "brand"
+                    ? "gradient-brand text-white"
+                    : "gradient-emerald text-emerald-foreground",
+                )}
+              >
+                <Sparkles className="h-4 w-4 opacity-80" />
+                <p className="mt-2 text-lg font-bold tracking-tight">{p.title}</p>
+                <p className="text-xs opacity-80">{p.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Insights (unchanged) */}
+        <section className="px-5 mt-6">
+          <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                  <TrendingUp className="h-4 w-4" />
+                </span>
+                <h3 className="text-sm font-semibold">Spending this week</h3>
+              </div>
+              <span className="text-xs text-muted-foreground">Nov 4 – 10</span>
+            </div>
+
+            <div className="mt-4 flex h-24 items-end justify-between gap-1.5">
+              {[40, 65, 30, 80, 55, 90, 45].map((v, i) => (
+                <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
+                  <div
+                    className="w-full rounded-t-md bg-muted overflow-hidden flex items-end"
+                    style={{ height: "100%" }}
+                  >
+                    <div
+                      className={cn(
+                        "w-full rounded-t-md transition-all",
+                        i === 5 ? "gradient-emerald" : "bg-brand/70",
+                      )}
+                      style={{ height: `${v}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">{"MTWTFSS"[i]}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex justify-between text-xs">
+              <span className="text-muted-foreground">Weekly avg</span>
+              <span className="font-semibold tabular-nums">₱1,284 / day</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Recent transactions (unchanged) */}
+        <section className="px-5 mt-6">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold tracking-tight">Recent activity</h3>
+            <button className="text-xs font-medium text-emerald hover:underline">See all</button>
+          </div>
+          <ul className="divide-y divide-border rounded-3xl border border-border bg-card shadow-card overflow-hidden">
+            {transactions.map((tx) => (
+              <li key={tx.id} className="flex items-center gap-3 px-4 py-3.5">
+                <span
+                  className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-2xl",
+                    tx.in ? "bg-emerald/15 text-emerald" : "bg-muted text-foreground",
+                  )}
+                >
+                  {tx.in ? (
+                    <ArrowDownLeft className="h-5 w-5" />
+                  ) : tx.cat.includes("Coffee") ? (
+                    <Coffee className="h-5 w-5" />
+                  ) : (
+                    <ArrowUpRight className="h-5 w-5" />
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{tx.name}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {tx.cat} · {tx.time}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className={cn("text-sm font-semibold tabular-nums", tx.in && "text-emerald")}>
+                    {tx.in ? "+" : "−"}₱{Math.abs(tx.amount).toLocaleString()}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    </MobileShell>
+  );
+}
+
+export default Dashboard;
