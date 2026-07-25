@@ -141,7 +141,7 @@ function Cards() {
                       </span>
                     </p>
                     <div className="mt-2 flex items-end justify-between text-[11px] text-white/70">
-                      <span>ALEXIS CRUZ</span>
+                      <span>JOHN PAUL CRUZ</span>
                       <span className="font-bold italic text-white">TB</span>
                     </div>
                   </div>
@@ -168,7 +168,7 @@ function Cards() {
                         }}
                       />
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 font-[cursive] text-[13px] italic text-neutral-700">
-                        Alexis Cruz
+                        John Paul Cruz
                       </span>
                     </div>
                     <div className="flex h-9 w-16 flex-col items-center justify-center rounded-md bg-white text-neutral-900">

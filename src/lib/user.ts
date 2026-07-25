@@ -8,7 +8,7 @@ export interface UserProfile {
 }
 
 export const currentUser: UserProfile = {
-  name: "Alexis Cruz",
+  name: "John Paul Cruz",
   email: "alexis.cruz@example.com",
   tag: "@alexis.cruz",
   account: "••4271",

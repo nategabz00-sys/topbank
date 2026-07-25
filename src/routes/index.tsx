@@ -89,7 +89,7 @@ function Dashboard() {
                   Welcome back
                 </p>
                 <h2 className="text-lg font-bold" style={{ color: "#1F2937" }}>
-                  Shaire Mae
+                  John Paul
                 </h2>
               </div>
             </div>
