@@ -1162,15 +1162,22 @@ function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose:
   const bills = useMemo(
     () =>
       Array.from({ length: 14 }).map((_, i) => {
-        const angle = (i / 14) * Math.PI * 2 + Math.random() * 0.4;
-        const dist = 140 + Math.random() * 140;
+        const side = i % 2 === 0 ? -1 : 1;
+        const startX = side * (100 + Math.random() * 60);
+        const startY = -70 - Math.random() * 60;
+        const endX = side * (30 + Math.random() * 50);
+        const endY = -180 - Math.random() * 100;
         return {
-          tx: Math.cos(angle) * dist,
-          ty: -Math.abs(Math.sin(angle) * dist) - 60 - Math.random() * 120,
-          r0: Math.random() * 40 - 20,
-          r1: Math.random() * 720 - 360,
-          delay: Math.random() * 0.35,
-          scale: 0.7 + Math.random() * 0.6,
+          startX,
+          startY,
+          tx: endX,
+          ty: endY,
+          r0: Math.random() * 18 - 9,
+          r1: side * (300 + Math.random() * 180) + (Math.random() * 45 - 22.5),
+          delay: Math.random() * 0.2,
+          scale: 0.62 + Math.random() * 0.5,
+          opacity: 0.76 + Math.random() * 0.16,
+          duration: 2.2 + Math.random() * 0.5,
         };
       }),
     [],
@@ -1208,7 +1215,7 @@ function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose:
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60"
       onClick={onClose}
     >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden rounded-t-[32px]">
         {bills.map((b, i) => (
           <span
             key={i}
@@ -1216,6 +1223,10 @@ function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose:
             style={
               {
                 animationDelay: `${b.delay}s`,
+                animationDuration: `${b.duration}s`,
+                opacity: b.opacity,
+                "--start-x": `${b.startX}px`,
+                "--start-y": `${b.startY}px`,
                 "--tx": `${b.tx}px`,
                 "--ty": `${b.ty}px`,
                 "--r0": `${b.r0}deg`,
@@ -1234,7 +1245,7 @@ function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose:
               {
                 width: s.size,
                 height: s.size,
-                boxShadow: "0 0 8px rgba(255,215,120,0.9)",
+                boxShadow: "0 0 10px rgba(255,215,120,0.8), 0 0 24px rgba(250,204,21,0.25)",
                 animationDelay: `${s.delay}s`,
                 "--sx": `${s.sx}px`,
                 "--sy": `${s.sy}px`,
@@ -1246,10 +1257,10 @@ function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose:
 
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative z-10 w-full max-w-md rounded-t-[32px] bg-background p-6 pb-8 shadow-elevated"
+        className="relative z-10 w-full max-w-md overflow-hidden rounded-t-[32px] bg-background p-6 pb-8 shadow-elevated"
       >
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-muted" />
-        <div className="flex flex-col items-center">
+        <div className="relative z-10 flex flex-col items-center">
           <div className="relative">
             <div className="absolute inset-0 rounded-full success-glow" />
             <div className="relative flex h-20 w-20 items-center justify-center rounded-full gradient-emerald text-white success-pop">
