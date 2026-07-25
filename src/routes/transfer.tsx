@@ -1,15 +1,22 @@
-import { createFileRoute, useRouterState } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+﻿import { createFileRoute, useRouterState } from "@tanstack/react-router";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import {
+  ArrowLeft,
+  Banknote,
+  Building2,
+  Check,
   ChevronRight,
-  Zap,
+  Clock3,
+  Copy,
+  FileText,
+  Phone,
+  Receipt as ReceiptIcon,
+  Share2,
   ShieldCheck,
+  Star,
   Wallet,
   X,
-  Check,
-  Copy,
-  Share2,
-  Receipt as ReceiptIcon,
+  Zap,
 } from "lucide-react";
 import { MobileShell } from "@/components/mobile-shell";
 import { cn } from "@/lib/utils";
@@ -30,32 +37,21 @@ export const Route = createFileRoute("/transfer")({
   component: Transfer,
 });
 
-const recents = [
-  { name: "Mika", tag: "@mika_r", tint: "gradient-emerald" },
-  { name: "Dad", tag: "•• 8821", tint: "gradient-brand" },
-  { name: "Jio", tag: "@jio", tint: "bg-accent text-accent-foreground" },
-  { name: "Nia", tag: "@nia_p", tint: "gradient-emerald" },
-  { name: "Rey", tag: "•• 4410", tint: "gradient-brand" },
-];
-
-const accounts = [
-  { id: "primary", label: "Primary · ••4271", balance: 184529.47 },
-  { id: "savings", label: "Everyday · ••8802", balance: 42130.1 },
-];
-
-const methods = [
-  { id: "insta", icon: "⚡", title: "InstaSend", desc: "Free · Arrives instantly" },
-  { id: "bank", icon: "🏦", title: "Bank transfer", desc: "Any Philippine bank · Free" },
-  { id: "intl", icon: "🌍", title: "International", desc: "120+ countries · Low fee" },
-  { id: "wallet", icon: "📱", title: "Mobile wallet", desc: "GCash, Maya, PayPal" },
-] as const;
+type View = "menu" | "reminder" | "form" | "review" | "success";
+type TransferFlow = "top-mobile" | "top-account" | "instapay" | "pesonet" | "bills";
 
 interface TransferRecipient {
+  id: string;
   name: string;
   tag: string;
+  detail: string;
   account?: string;
   bank?: string;
   ref?: string;
+  type: string;
+  flow: TransferFlow;
+  lastUsed: string;
+  logo: string;
 }
 
 interface TransferReceipt {
@@ -67,15 +63,116 @@ interface TransferReceipt {
   account: string;
 }
 
+interface FormState {
+  recipientName: string;
+  recipientAccount: string;
+  recipientBank: string;
+  recipientMobile: string;
+  note: string;
+  amount: string;
+  biller: string;
+  reference: string;
+}
+
+interface AccountOption {
+  id: string;
+  label: string;
+  balance: number;
+}
+
+const accounts: AccountOption[] = [
+  { id: "primary", label: "Primary · ••4271", balance: 184529.47 },
+  { id: "savings", label: "Everyday · ••8802", balance: 42130.1 },
+];
+
+const initialRecentRecipients: TransferRecipient[] = [
+  {
+    id: "mika",
+    name: "Mika",
+    tag: "@mika_r",
+    detail: "0917 232 1123",
+    flow: "top-mobile",
+    type: "Top Bank transfer",
+    lastUsed: "Today • 2:40 PM",
+    logo: "MK",
+    bank: "Top Bank",
+  },
+  {
+    id: "dad",
+    name: "Dad",
+    tag: "Dad",
+    detail: "•• 8821",
+    flow: "top-account",
+    type: "Account transfer",
+    lastUsed: "Yesterday",
+    logo: "DA",
+    bank: "Top Bank",
+  },
+  {
+    id: "insta-sample",
+    name: "Lara",
+    tag: "Lara",
+    detail: "•• 4410",
+    flow: "instapay",
+    type: "InstaPay",
+    lastUsed: "Mon",
+    logo: "LP",
+    bank: "BDO",
+  },
+  {
+    id: "bills-sample",
+    name: "Meralco",
+    tag: "Bills",
+    detail: "•• 1002",
+    flow: "bills",
+    type: "Bills payment",
+    lastUsed: "Sun",
+    logo: "ME",
+    bank: "Meralco",
+  },
+];
+
+const initialFavorites = ["mika", "insta-sample"];
+
+function createDefaultFormState(previous?: FormState): FormState {
+  return {
+    recipientName: "",
+    recipientAccount: "",
+    recipientBank: "Top Bank",
+    recipientMobile: "",
+    note: "",
+    amount: previous?.amount ?? "2500",
+    biller: "",
+    reference: "",
+  };
+}
+
+function formatCurrency(value: string | number) {
+  const numeric = typeof value === "number" ? value : Number(value || 0);
+  if (!Number.isFinite(numeric)) return "0.00";
+  return numeric.toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function maskValue(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "—";
+  if (digits.length <= 4) return `•• ${digits.slice(-2)}`;
+  return `${digits.slice(0, 2)}••••${digits.slice(-4)}`;
+}
+
 function Transfer() {
   const search = useRouterState({ select: (s) => s.location.search });
-  const [amount, setAmount] = useState("2500");
-  const [recipient, setRecipient] = useState<TransferRecipient>({
-    name: recents[0].name,
-    tag: recents[0].tag,
-  });
-  const [account, setAccount] = useState(accounts[0]);
-  const [method, setMethod] = useState<(typeof methods)[number]["id"]>("insta");
+  const [view, setView] = useState<View>("menu");
+  const [flow, setFlow] = useState<TransferFlow | null>(null);
+  const [formData, setFormData] = useState<FormState>(() => createDefaultFormState());
+  const [account] = useState<AccountOption>(accounts[0]);
+  const [activeRecipient, setActiveRecipient] = useState<TransferRecipient | null>(null);
+  const [recentRecipients, setRecentRecipients] = useState(initialRecentRecipients);
+  const [favorites, setFavorites] = useState<string[]>(initialFavorites);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
   const [receipt, setReceipt] = useState<TransferReceipt | null>(null);
 
@@ -83,344 +180,773 @@ function Transfer() {
     if (!search) return;
     const params = new URLSearchParams(search);
     const name = params.get("recipientName");
-    const tag = params.get("recipientTag");
     const acc = params.get("account");
     const bank = params.get("bank");
     const ref = params.get("ref");
     const amountParam = params.get("amount");
 
-    if (name && tag) {
-      setRecipient({
-        name,
-        tag,
-        account: acc ?? undefined,
-        bank: bank ?? undefined,
-        ref: ref ?? undefined,
-      });
-    }
-
-    if (amountParam) {
-      const parsed = Number(amountParam);
-      if (!Number.isNaN(parsed) && parsed > 0) {
-        setAmount(parsed.toString());
-      }
-    }
+    setFormData((prev) => ({
+      ...prev,
+      recipientName: name ?? prev.recipientName,
+      recipientAccount: acc ?? prev.recipientAccount,
+      recipientBank: bank ?? prev.recipientBank,
+      reference: ref ?? prev.reference,
+      amount: amountParam ?? prev.amount,
+    }));
   }, [search]);
 
-  const amountNum = Number(amount || 0);
-  const fee = method === "intl" ? Math.max(25, amountNum * 0.005) : 0;
-  const total = amountNum + fee;
-  const methodMeta = useMemo(() => methods.find((m) => m.id === method)!, [method]);
+  const amountNum = Number(formData.amount || 0);
+  const total = amountNum;
+
+  const openFlow = (nextFlow: TransferFlow, recipient?: TransferRecipient | null) => {
+    setFlow(nextFlow);
+    setErrors({});
+    setActiveRecipient(recipient ?? null);
+
+    if (recipient) {
+      setFormData((prev) => ({
+        ...prev,
+        recipientName: recipient.name,
+        recipientAccount: recipient.account ?? "",
+        recipientBank: recipient.bank ?? "Top Bank",
+        recipientMobile: recipient.flow === "top-mobile" ? recipient.detail : prev.recipientMobile,
+        note: recipient.ref ?? "",
+        biller: recipient.flow === "bills" ? recipient.name : prev.biller,
+        reference: recipient.flow === "bills" ? recipient.detail : prev.reference,
+      }));
+    } else {
+      setFormData((prev) => ({ ...createDefaultFormState(prev), amount: prev.amount }));
+    }
+
+    if (nextFlow === "instapay" || nextFlow === "pesonet") {
+      setView("reminder");
+    } else {
+      setView("form");
+    }
+  };
+
+  const handleBack = () => {
+    setErrors({});
+    if (view === "review") {
+      setView("form");
+      return;
+    }
+    if (view === "form" || view === "reminder") {
+      setFlow(null);
+      setActiveRecipient(null);
+      setView("menu");
+      return;
+    }
+    if (view === "success") {
+      setReceipt(null);
+      setFlow(null);
+      setActiveRecipient(null);
+      setView("menu");
+    }
+  };
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+
+  const validateForm = () => {
+    const nextErrors: Record<string, string> = {};
+    const amountValue = Number(formData.amount || 0);
+
+    if (amountValue <= 0) {
+      nextErrors.amount = "Enter an amount to continue";
+    } else if (amountValue > account.balance) {
+      nextErrors.amount = "Insufficient balance";
+    }
+
+    if (!flow) return nextErrors;
+
+    switch (flow) {
+      case "top-mobile":
+        if (!formData.recipientName.trim()) nextErrors.recipientName = "Enter recipient name";
+        if (!/^\+?[0-9\s-]{7,15}$/.test(formData.recipientMobile.replace(/\s+/g, ""))) {
+          nextErrors.recipientMobile = "Enter a valid mobile number";
+        }
+        break;
+      case "top-account":
+      case "instapay":
+      case "pesonet":
+        if (!formData.recipientName.trim()) nextErrors.recipientName = "Enter account name";
+        if (!/^[0-9]{6,20}$/.test(formData.recipientAccount)) {
+          nextErrors.recipientAccount = "Enter a valid account number";
+        }
+        if (!formData.recipientBank.trim()) nextErrors.recipientBank = "Select a bank";
+        break;
+      case "bills":
+        if (!formData.biller.trim()) nextErrors.biller = "Choose a biller";
+        if (!formData.reference.trim()) nextErrors.reference = "Add an account or reference number";
+        break;
+    }
+
+    setErrors(nextErrors);
+    return nextErrors;
+  };
+
+  const handleContinue = () => {
+    if (Object.keys(validateForm()).length > 0) return;
+    setView("review");
+  };
 
   const handleSend = () => {
-    if (amountNum <= 0) {
-      toast.error("Enter an amount to send");
-      return;
-    }
-    if (amountNum > account.balance) {
-      toast.error("Insufficient balance");
-      return;
-    }
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) return;
+
     setSending(true);
-    // Simulate network processing then present success receipt.
-    setTimeout(() => {
+    window.setTimeout(() => {
       const ref =
         "TB" + Date.now().toString().slice(-8) + Math.floor(Math.random() * 90 + 10).toString();
+      const recipientLabel =
+        flow === "bills"
+          ? formData.biller
+          : formData.recipientName || activeRecipient?.name || "Recipient";
+      const detail =
+        flow === "top-mobile"
+          ? formData.recipientMobile
+          : flow === "bills"
+            ? formData.reference
+            : formData.recipientAccount;
+      const nextRecipient: TransferRecipient = {
+        id: `${flow ?? "transfer"}-${Date.now()}`,
+        name: recipientLabel,
+        tag: recipientLabel,
+        detail,
+        account: formData.recipientAccount || activeRecipient?.account,
+        bank: formData.recipientBank || activeRecipient?.bank,
+        ref: formData.note || formData.reference || activeRecipient?.ref,
+        type:
+          flow === "instapay"
+            ? "InstaPay"
+            : flow === "pesonet"
+              ? "PESONet"
+              : flow === "bills"
+                ? "Bills payment"
+                : "Transfer",
+        flow: flow ?? "top-mobile",
+        lastUsed: "Just now",
+        logo:
+          flow === "instapay" ? "IP" : flow === "pesonet" ? "PN" : flow === "bills" ? "BL" : "TR",
+      };
+
+      setRecentRecipients((prev) =>
+        [nextRecipient, ...prev.filter((item) => item.id !== nextRecipient.id)].slice(0, 5),
+      );
       setReceipt({
         amount: amountNum,
-        recipient,
+        recipient: nextRecipient,
         reference: ref,
         date: new Date(),
-        method: methodMeta.title,
+        method:
+          flow === "instapay"
+            ? "InstaPay"
+            : flow === "pesonet"
+              ? "PESONet"
+              : flow === "bills"
+                ? "Bills Payment"
+                : "Top Bank Transfer",
         account: account.label,
       });
       setSending(false);
+      setView("success");
     }, 700);
   };
 
+  const headerTitle =
+    flow === "instapay"
+      ? "InstaPay"
+      : flow === "pesonet"
+        ? "PESONet"
+        : flow === "bills"
+          ? "Bills Payment"
+          : flow === "top-mobile"
+            ? "Transfer with Mobile Number"
+            : flow === "top-account"
+              ? "Transfer with Account Number"
+              : "Transfer";
+
   return (
     <MobileShell>
-      {/* Hero amount card — primary focus */}
-      <section className="px-5 pt-8">
-        <div className="relative overflow-hidden rounded-[28px] gradient-card p-6 text-white shadow-elevated">
-          <div className="absolute -right-14 -top-14 h-48 w-48 rounded-full gradient-emerald opacity-25 blur-3xl" />
-          <div className="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-white/5 blur-3xl" />
-
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-medium uppercase tracking-widest text-white/60">
-              You send
-            </span>
-            <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-medium text-white/80 backdrop-blur">
-              <ShieldCheck className="h-3 w-3" /> Safe Send
-            </span>
-          </div>
-
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-semibold text-white/70">₱</span>
-            <input
-              value={amount}
-              onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
-              inputMode="decimal"
-              aria-label="Amount"
-              className="w-full min-w-0 bg-transparent text-6xl font-bold tabular-nums outline-none placeholder:text-white/30"
-              placeholder="0"
-            />
-          </div>
-          <p className="mt-1 text-xs text-white/60">
-            Available {account.label} · ₱
-            {account.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-          </p>
-
-          <div className="mt-4 flex gap-2">
-            {["500", "1000", "5000", "10000"].map((v) => (
-              <button
-                key={v}
-                onClick={() => setAmount(v)}
-                className="flex-1 rounded-full bg-white/10 py-2 text-[11px] font-semibold text-white/90 backdrop-blur transition-colors hover:bg-white/15"
-              >
-                +₱{Number(v).toLocaleString()}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* From account selector */}
-      <section className="px-5 mt-5">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          From
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          {accounts.map((a) => (
+      <div className="min-h-full bg-[#FFF8F2] px-5 pb-24 pt-5 dark:bg-background">
+        {view !== "menu" && (
+          <div className="mb-4 flex items-center gap-3">
             <button
-              key={a.id}
-              onClick={() => setAccount(a)}
-              className={cn(
-                "rounded-2xl border p-3 text-left transition-all",
-                account.id === a.id
-                  ? "border-emerald bg-accent shadow-card"
-                  : "border-border bg-card hover:bg-muted",
-              )}
+              onClick={handleBack}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm"
             >
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-background text-brand">
-                  <Wallet className="h-4 w-4" />
-                </span>
-                <p className="text-[11px] font-medium text-muted-foreground truncate">{a.label}</p>
-              </div>
-              <p className="mt-2 text-sm font-bold tabular-nums">
-                ₱{a.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
+              <ArrowLeft className="h-4 w-4" />
             </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-5 mt-5">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Recipient
-        </p>
-        <div className="rounded-3xl border border-border bg-card p-4 shadow-card">
-          <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-foreground">{recipient.name}</p>
-              <p className="text-xs text-muted-foreground">{recipient.tag}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                {flow === "instapay" || flow === "pesonet" ? "Reminder" : "Transfer"}
+              </p>
+              <h2 className="text-lg font-semibold text-foreground">{headerTitle}</h2>
             </div>
-            <span className="rounded-full px-3 py-1 text-[11px] font-semibold text-[#FF9A2F] bg-[#FF9A2F]/10">
-              {recipient.account ? "QR" : "Recent"}
-            </span>
           </div>
-          {recipient.account && (
-            <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+        )}
+
+        {view === "menu" ? (
+          <>
+            <section className="rounded-[28px] border border-border/60 bg-card p-5 shadow-[0_16px_40px_-22px_rgba(15,23,42,0.24)]">
               <div className="flex items-center justify-between">
-                <span>Account</span>
-                <span>{recipient.account}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Bank</span>
-                <span>{recipient.bank ?? "Top Bank"}</span>
-              </div>
-              {recipient.ref && (
-                <div className="flex items-center justify-between">
-                  <span>Reference</span>
-                  <span>{recipient.ref}</span>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                    Transfer
+                  </p>
+                  <h1 className="mt-1 text-2xl font-semibold text-foreground">
+                    Move money with ease
+                  </h1>
                 </div>
-              )}
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FF9A2F]/12 text-[#FF9A2F]">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-[24px] bg-gradient-to-br from-[#FFB968] via-[#FF9A2F] to-[#F97316] p-4 text-white shadow-[0_16px_40px_-18px_rgba(249,115,22,0.65)]">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/80">
+                      Quick send
+                    </p>
+                    <p className="mt-1 text-xl font-semibold">₱{formatCurrency(total)}</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/15 px-3 py-2 text-[11px] font-semibold backdrop-blur">
+                    Safe transfer
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  {[500, 1000, 5000, 10000].map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setFormData((prev) => ({ ...prev, amount: String(v) }))}
+                      className="flex-1 rounded-full bg-white/15 px-2 py-2 text-[11px] font-semibold text-white/90"
+                    >
+                      +₱{v.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                  To Top Bank Accounts
+                </h3>
+              </div>
+              <div className="grid gap-3">
+                <TransferOptionCard
+                  title="Transfer with Mobile Number"
+                  subtitle="Send to a saved Top Bank contact quickly"
+                  icon={<Phone className="h-5 w-5" />}
+                  onClick={() => openFlow("top-mobile")}
+                />
+                <TransferOptionCard
+                  title="Transfer with Account Number"
+                  subtitle="Send to any Top Bank account"
+                  icon={<Building2 className="h-5 w-5" />}
+                  onClick={() => openFlow("top-account")}
+                />
+              </div>
+            </section>
+
+            <section className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                  To Other Banks
+                </h3>
+              </div>
+              <div className="grid gap-3">
+                <TransferOptionCard
+                  title="InstaPay"
+                  subtitle="Real-time transfer to other banks."
+                  icon={
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0F172A] text-[11px] font-semibold text-white">
+                      IP
+                    </div>
+                  }
+                  onClick={() => openFlow("instapay")}
+                />
+                <TransferOptionCard
+                  title="PESONet"
+                  subtitle="Scheduled transfer to other banks."
+                  icon={
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0F766E] text-[11px] font-semibold text-white">
+                      PN
+                    </div>
+                  }
+                  onClick={() => openFlow("pesonet")}
+                />
+              </div>
+            </section>
+
+            <section className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                  Bills Payment
+                </h3>
+              </div>
+              <TransferOptionCard
+                title="Pay Bills"
+                subtitle="Settle electricity, water, and other bills"
+                icon={<Banknote className="h-5 w-5" />}
+                onClick={() => openFlow("bills")}
+              />
+            </section>
+
+            <section className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                  Recent
+                </h3>
+              </div>
+              <div className="space-y-2">
+                {recentRecipients.map((recipient) => {
+                  const isFavorite = favorites.includes(recipient.id);
+                  return (
+                    <div
+                      key={recipient.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openFlow(recipient.flow, recipient)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          openFlow(recipient.flow, recipient);
+                        }
+                      }}
+                      className="flex w-full items-center justify-between rounded-[22px] border border-border bg-card p-3 text-left shadow-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF2E5] text-sm font-semibold text-[#FF9A2F] dark:bg-[#1f2937]">
+                          {recipient.logo}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{recipient.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {maskValue(recipient.detail)} · {recipient.type}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <p className="text-[10px] text-muted-foreground">{recipient.lastUsed}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleFavorite(recipient.id);
+                          }}
+                          className={cn(
+                            "flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background transition-colors",
+                            isFavorite && "bg-[#FF9A2F]/10 text-[#FF9A2F]",
+                          )}
+                        >
+                          <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                  Favorites
+                </h3>
+              </div>
+              <div className="space-y-2">
+                {recentRecipients
+                  .filter((recipient) => favorites.includes(recipient.id))
+                  .map((recipient) => (
+                    <div
+                      key={recipient.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openFlow(recipient.flow, recipient)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          openFlow(recipient.flow, recipient);
+                        }
+                      }}
+                      className="flex w-full items-center justify-between rounded-[22px] border border-border bg-card p-3 text-left shadow-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF2E5] text-sm font-semibold text-[#FF9A2F] dark:bg-[#1f2937]">
+                          {recipient.logo}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{recipient.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {maskValue(recipient.detail)} · {recipient.type}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  ))}
+              </div>
+            </section>
+          </>
+        ) : view === "reminder" ? (
+          <section className="rounded-[28px] border border-border bg-card p-5 shadow-[0_16px_40px_-22px_rgba(15,23,42,0.24)]">
+            <div className="flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-[#FFF2E5] text-lg font-semibold text-[#FF9A2F] dark:bg-[#1f2937]">
+                {flow === "instapay" ? "IP" : "PN"}
+              </div>
             </div>
-          )}
-          {!recipient.account && (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Choose a recent contact or scan a QR code to fill in recipient details.
+            <h3 className="mt-4 text-center text-xl font-semibold text-foreground">
+              {flow === "instapay" ? "InstaPay reminder" : "PESONet reminder"}
+            </h3>
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              {flow === "instapay"
+                ? "Please review the reminder details before proceeding to the transfer form."
+                : "Please review the schedule and cut-off reminders before continuing."}
             </p>
-          )}
-        </div>
-      </section>
+            <div className="mt-5 rounded-[24px] bg-muted/50 p-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-full bg-[#FF9A2F]/10 p-2 text-[#FF9A2F]">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {flow === "instapay" ? "Fast and secure transfer" : "Scheduled transfer window"}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {flow === "instapay"
+                      ? "Transfers usually reflect in real time. Make sure the account details are correct before you continue."
+                      : "Transfers are usually processed in the next settlement cycle. Review cut-off reminders before you proceed."}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Clock3 className="h-4 w-4" />
+                  <span>Check the destination and amount before confirming.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span>Customer support is available for assistance.</span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setView("form")}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#FF9A2F] py-4 text-sm font-semibold text-white"
+            >
+              Proceed <ChevronRight className="h-4 w-4" />
+            </button>
+          </section>
+        ) : view === "form" ? (
+          <section className="rounded-[28px] border border-border bg-card p-4 shadow-[0_16px_40px_-22px_rgba(15,23,42,0.24)]">
+            <div className="rounded-[24px] border border-border/70 bg-background/70 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                    Recipient details
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">
+                    {flow === "bills"
+                      ? "Biller information"
+                      : flow === "top-mobile"
+                        ? "Mobile transfer"
+                        : flow === "top-account"
+                          ? "Account transfer"
+                          : flow === "instapay"
+                            ? "InstaPay transfer"
+                            : flow === "pesonet"
+                              ? "PESONet transfer"
+                              : "Transfer details"}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-[#FF9A2F]/10 p-3 text-[#FF9A2F]">
+                  <Wallet className="h-5 w-5" />
+                </div>
+              </div>
 
-      {/* Recipient */}
-      <section className="px-5 mt-6">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            To
-          </p>
-          <button className="text-xs font-medium text-emerald">Add new</button>
-        </div>
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none [&::-webkit-scrollbar]:hidden">
-          {recents.map((r) => {
-            const selected = r.tag === recipient.tag;
-            return (
-              <button
-                key={r.tag}
-                onClick={() => setRecipient({ name: r.name, tag: r.tag })}
-                className="flex shrink-0 flex-col items-center gap-1.5 w-16"
-                aria-pressed={selected}
-              >
-                <span
-                  className={cn(
-                    "flex h-14 w-14 items-center justify-center rounded-full text-white shadow-card ring-offset-2 ring-offset-background transition-all",
-                    r.tint,
-                    selected && "ring-2 ring-emerald scale-105",
+              <div className="mt-4 space-y-3">
+                {flow === "bills" ? (
+                  <>
+                    <div>
+                      <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        Biller
+                      </label>
+                      <input
+                        value={formData.biller}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, biller: e.target.value }))
+                        }
+                        className="mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                        placeholder="e.g. Meralco"
+                      />
+                      {errors.biller && (
+                        <p className="mt-1 text-xs text-destructive">{errors.biller}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        Account / Reference Number
+                      </label>
+                      <input
+                        value={formData.reference}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, reference: e.target.value }))
+                        }
+                        className="mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                        placeholder="Reference number"
+                      />
+                      {errors.reference && (
+                        <p className="mt-1 text-xs text-destructive">{errors.reference}</p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        {flow === "top-mobile" ? "Recipient Mobile Number" : "Recipient Bank"}
+                      </label>
+                      {flow === "top-mobile" ? (
+                        <input
+                          value={formData.recipientMobile}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, recipientMobile: e.target.value }))
+                          }
+                          className="mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          placeholder="09XX XXX XXXX"
+                        />
+                      ) : (
+                        <select
+                          value={formData.recipientBank}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, recipientBank: e.target.value }))
+                          }
+                          className="mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                        >
+                          <option value="Top Bank">Top Bank</option>
+                          <option value="BDO">BDO</option>
+                          <option value="Metro Bank">Metro Bank</option>
+                          <option value="BPI">BPI</option>
+                        </select>
+                      )}
+                      {errors.recipientMobile && (
+                        <p className="mt-1 text-xs text-destructive">{errors.recipientMobile}</p>
+                      )}
+                      {errors.recipientBank && (
+                        <p className="mt-1 text-xs text-destructive">{errors.recipientBank}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        {flow === "top-mobile" ? "Recipient Name" : "Account Name"}
+                      </label>
+                      <input
+                        value={formData.recipientName}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, recipientName: e.target.value }))
+                        }
+                        className="mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                        placeholder={
+                          flow === "top-mobile" ? "Recipient name" : "Account holder name"
+                        }
+                      />
+                      {errors.recipientName && (
+                        <p className="mt-1 text-xs text-destructive">{errors.recipientName}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        {flow === "top-mobile" ? "Amount" : "Account Number"}
+                      </label>
+                      {flow === "top-mobile" ? (
+                        <input
+                          value={formData.amount}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              amount: e.target.value.replace(/[^\d.]/g, ""),
+                            }))
+                          }
+                          className="mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-2xl font-semibold outline-none"
+                          placeholder="0.00"
+                        />
+                      ) : (
+                        <input
+                          value={formData.recipientAccount}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              recipientAccount: e.target.value.replace(/[^0-9]/g, ""),
+                            }))
+                          }
+                          className="mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                          placeholder="Account number"
+                        />
+                      )}
+                      {errors.recipientAccount && (
+                        <p className="mt-1 text-xs text-destructive">{errors.recipientAccount}</p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    Amount
+                  </label>
+                  <input
+                    value={formData.amount}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        amount: e.target.value.replace(/[^\d.]/g, ""),
+                      }))
+                    }
+                    className="mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-2xl font-semibold outline-none"
+                    placeholder="0.00"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    ₱{formatCurrency(formData.amount)} · Available {account.label}
+                  </p>
+                  {errors.amount && (
+                    <p className="mt-1 text-xs text-destructive">{errors.amount}</p>
                   )}
-                >
-                  <span className="text-sm font-bold">{r.name.slice(0, 2).toUpperCase()}</span>
-                </span>
-                <span className={cn("text-[11px] font-medium", selected && "text-emerald")}>
-                  {r.name}
-                </span>
-                <span className="text-[10px] text-muted-foreground -mt-1">{r.tag}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+                </div>
 
-      {/* Method */}
-      <section className="mt-5 px-5">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Method
-        </p>
-        <div className="rounded-3xl border border-border bg-card p-1 shadow-card">
-          {methods.map((m) => (
-            <MethodRow
-              key={m.id}
-              icon={m.icon}
-              title={m.title}
-              desc={m.desc}
-              active={method === m.id}
-              onClick={() => setMethod(m.id)}
-            />
-          ))}
-        </div>
-      </section>
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    Note / Purpose (optional)
+                  </label>
+                  <input
+                    value={formData.note}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, note: e.target.value }))}
+                    className="mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none"
+                    placeholder="Add a note"
+                  />
+                </div>
+              </div>
+            </div>
 
-      {/* Summary + CTA */}
-      <section className="mt-5 px-5">
-        <div className="rounded-3xl border border-border bg-card p-4 shadow-card">
-          <SummaryRow
-            label="Amount"
-            value={`₱${amountNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-          />
-          <SummaryRow
-            label="Fee"
-            value={
-              fee === 0 ? "Free" : `₱${fee.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-            }
-          />
-          <div className="my-2 border-t border-border" />
-          <SummaryRow
-            label="Total"
-            value={`₱${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-            bold
-          />
-        </div>
+            <div className="mt-4 rounded-[24px] border border-border/60 bg-muted/30 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">From account</span>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-foreground">{account.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Balance ₱{formatCurrency(account.balance)}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-        <button
-          onClick={handleSend}
-          disabled={sending}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-full gradient-emerald py-4 text-sm font-semibold text-emerald-foreground shadow-glow transition-transform active:scale-[0.98] disabled:opacity-70"
-        >
-          {sending ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-              Processing…
-            </>
-          ) : (
-            <>
-              <Zap className="h-4 w-4" strokeWidth={2.6} /> Send ₱{amountNum.toLocaleString()} now
-            </>
-          )}
-        </button>
-        <p className="mt-2 text-center text-[11px] text-muted-foreground">
-          Protected by TopBank Safe Send · Face ID required
-        </p>
-      </section>
+            <button
+              onClick={handleContinue}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#FF9A2F] py-4 text-sm font-semibold text-white"
+            >
+              Continue <ChevronRight className="h-4 w-4" />
+            </button>
+          </section>
+        ) : view === "review" ? (
+          <section className="rounded-[28px] border border-border bg-card p-4 shadow-[0_16px_40px_-22px_rgba(15,23,42,0.24)]">
+            <div className="rounded-[24px] border border-border/70 bg-background/70 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                Review transfer
+              </p>
+              <h3 className="mt-1 text-xl font-semibold text-foreground">Confirm your transfer</h3>
+              <div className="mt-4 rounded-[22px] bg-muted/50 p-4">
+                <SummaryRow label="Recipient" value={formData.recipientName || "Recipient"} />
+                <SummaryRow label="Amount" value={`₱${formatCurrency(amountNum)}`} />
+                <SummaryRow label="From" value={account.label} />
+                <SummaryRow label="Method" value={headerTitle} />
+                <SummaryRow label="Note" value={formData.note || "—"} />
+              </div>
+            </div>
+            <button
+              onClick={handleSend}
+              disabled={sending}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#FF9A2F] py-4 text-sm font-semibold text-white"
+            >
+              {sending ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  Processing…
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4" /> Confirm transfer
+                </>
+              )}
+            </button>
+          </section>
+        ) : null}
+      </div>
 
-      {receipt && <SuccessModal receipt={receipt} onClose={() => setReceipt(null)} />}
+      {receipt && (
+        <SuccessModal
+          receipt={receipt}
+          onClose={() => {
+            setReceipt(null);
+            setView("menu");
+            setFlow(null);
+            setActiveRecipient(null);
+          }}
+        />
+      )}
     </MobileShell>
   );
 }
 
-function SummaryRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between py-1.5">
-      <span
-        className={cn("text-xs", bold ? "font-semibold text-foreground" : "text-muted-foreground")}
-      >
-        {label}
-      </span>
-      <span className={cn("tabular-nums", bold ? "text-base font-bold" : "text-sm font-medium")}>
-        {value}
-      </span>
+    <div className="flex items-center justify-between py-1.5 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-semibold text-foreground">{value}</span>
     </div>
   );
 }
 
-function MethodRow({
-  icon,
+function TransferOptionCard({
   title,
-  desc,
-  active,
+  subtitle,
+  icon,
   onClick,
 }: {
-  icon: string;
   title: string;
-  desc: string;
-  active?: boolean;
-  onClick?: () => void;
+  subtitle: string;
+  icon: ReactNode;
+  onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        "flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-colors",
-        active ? "bg-accent" : "hover:bg-muted",
-      )}
+      className="flex items-center justify-between rounded-[24px] border border-border bg-card p-4 text-left shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-background text-lg shadow-sm">
-        {icon}
-      </span>
-      <div className="flex-1">
-        <p className="text-sm font-semibold flex items-center gap-2">
-          {title}
-          {active && (
-            <span className="rounded-full bg-emerald/20 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald">
-              Selected
-            </span>
-          )}
-        </p>
-        <p className="text-[11px] text-muted-foreground">{desc}</p>
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF2E5] text-[#FF9A2F] dark:bg-[#1f2937]">
+          {icon}
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
+        </div>
       </div>
       <ChevronRight className="h-4 w-4 text-muted-foreground" />
     </button>
   );
 }
 
-/* ---------------- Success Modal + Flying Money animation ---------------- */
-
 function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose: () => void }) {
   const [showDetails, setShowDetails] = useState(false);
-
-  // Deterministic per-render random trajectories.
   const bills = useMemo(
     () =>
       Array.from({ length: 14 }).map((_, i) => {
@@ -467,10 +993,9 @@ function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose:
       role="dialog"
       aria-modal="true"
       aria-label="Transfer successful"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-in"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60"
       onClick={onClose}
     >
-      {/* Flying money layer — sits above backdrop, below modal */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {bills.map((b, i) => (
           <span
@@ -483,7 +1008,7 @@ function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose:
                 "--ty": `${b.ty}px`,
                 "--r0": `${b.r0}deg`,
                 "--r1": `${b.r1}deg`,
-              } as React.CSSProperties
+              } as CSSProperties
             }
           >
             <MoneyBill scale={b.scale} />
@@ -501,7 +1026,7 @@ function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose:
                 animationDelay: `${s.delay}s`,
                 "--sx": `${s.sx}px`,
                 "--sy": `${s.sy}px`,
-              } as React.CSSProperties
+              } as CSSProperties
             }
           />
         ))}
@@ -509,52 +1034,23 @@ function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose:
 
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative z-10 w-full max-w-md rounded-t-[32px] bg-background p-6 pb-8 shadow-elevated sheet-in"
+        className="relative z-10 w-full max-w-md rounded-t-[32px] bg-background p-6 pb-8 shadow-elevated"
       >
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-muted" />
-
-        {/* Animated check */}
         <div className="flex flex-col items-center">
           <div className="relative">
             <div className="absolute inset-0 rounded-full success-glow" />
             <div className="relative flex h-20 w-20 items-center justify-center rounded-full gradient-emerald text-white success-pop">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-10 w-10"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={3}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12.5l4.5 4.5L19 7.5" className="check-draw" />
-              </svg>
+              <Check className="h-10 w-10" />
             </div>
           </div>
-
           <h2 className="mt-5 text-lg font-semibold tracking-tight">Transfer Successful</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Your money is on its way to {receipt.recipient.name}
           </p>
-
           <p className="mt-5 text-4xl font-bold tabular-nums tracking-tight">
             ₱{receipt.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </p>
-
-          <div className="mt-2 flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full gradient-brand text-xs font-bold text-white">
-              {receipt.recipient.name.slice(0, 2).toUpperCase()}
-            </span>
-            <div className="text-left">
-              <p className="text-sm font-semibold leading-none">{receipt.recipient.name}</p>
-              <p className="text-[11px] text-muted-foreground">{receipt.recipient.tag}</p>
-              {receipt.recipient.account && (
-                <p className="text-[11px] text-muted-foreground">
-                  {receipt.recipient.account} · {receipt.recipient.bank ?? "Top Bank"}
-                </p>
-              )}
-            </div>
-          </div>
         </div>
 
         <div className="mt-6 rounded-2xl border border-border bg-card p-4">
@@ -579,16 +1075,10 @@ function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose:
           {showDetails && (
             <>
               <ReceiptRow label="From" value={receipt.account} />
-              {receipt.recipient.account && (
-                <ReceiptRow
-                  label="To"
-                  value={`${receipt.recipient.account} · ${receipt.recipient.bank ?? "Top Bank"}`}
-                />
-              )}
               <ReceiptRow label="Method" value={receipt.method} />
               <ReceiptRow
                 label="Status"
-                value={<span className="text-emerald font-semibold">Completed</span>}
+                value={<span className="font-semibold text-emerald">Completed</span>}
               />
             </>
           )}
@@ -612,7 +1102,7 @@ function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose:
 
         <button
           onClick={onClose}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-full gradient-emerald py-4 text-sm font-semibold text-emerald-foreground shadow-glow"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[#FF9A2F] py-4 text-sm font-semibold text-white"
         >
           <Check className="h-4 w-4" /> Done
         </button>
@@ -629,7 +1119,7 @@ function SuccessModal({ receipt, onClose }: { receipt: TransferReceipt; onClose:
   );
 }
 
-function ReceiptRow({ label, value }: { label: string; value: React.ReactNode }) {
+function ReceiptRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-center justify-between py-1.5 text-xs">
       <span className="text-muted-foreground">{label}</span>

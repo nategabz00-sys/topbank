@@ -80,16 +80,6 @@ function Cards() {
     <MobileShell>
       <div className="px-5 pt-8">
         <div className="relative mx-auto w-full max-w-sm" style={{ perspective: "1400px" }}>
-          <button
-            type="button"
-            onClick={() => goToCard(idx - 1)}
-            aria-label="Previous card"
-            disabled={idx === 0}
-            className="absolute left-[-0.75rem] top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-card backdrop-blur-sm transition hover:scale-105 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-
           <div className="relative mx-auto aspect-[1.6/1] w-full max-w-sm">
             <button
               type="button"
@@ -207,31 +197,47 @@ function Cards() {
               </div>
             </button>
           </div>
+        </div>
+
+        <div className="mt-5 flex items-center justify-center gap-4">
+          <button
+            type="button"
+            onClick={() => goToCard(idx - 1)}
+            aria-label="Previous card"
+            disabled={idx === 0}
+            className={cn(
+              "flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-card transition hover:scale-105 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40",
+            )}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          <div className="flex items-center gap-1.5">
+            {cards.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setIdx(i)}
+                aria-label={`Show ${cards[i].kind}`}
+                className={cn(
+                  "h-1.5 rounded-full transition-all",
+                  i === idx ? "w-6 bg-brand" : "w-1.5 bg-muted-foreground/35",
+                )}
+              />
+            ))}
+          </div>
 
           <button
             type="button"
             onClick={() => goToCard(idx + 1)}
             aria-label="Next card"
             disabled={idx === cards.length - 1}
-            className="absolute right-[-0.75rem] top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-card backdrop-blur-sm transition hover:scale-105 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+            className={cn(
+              "flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-card transition hover:scale-105 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40",
+            )}
           >
             <ChevronRight className="h-4 w-4" />
           </button>
-        </div>
-
-        <div className="mt-5 flex justify-center gap-1.5">
-          {cards.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setIdx(i)}
-              aria-label={`Show ${cards[i].kind}`}
-              className={cn(
-                "h-1.5 rounded-full transition-all",
-                i === idx ? "w-6 bg-brand" : "w-1.5 bg-muted-foreground/35",
-              )}
-            />
-          ))}
         </div>
 
         <p className="mt-3 text-center text-[11px] text-muted-foreground">Tap the card to flip</p>
