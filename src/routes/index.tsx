@@ -20,6 +20,7 @@ import {
 import { MobileShell } from "@/components/mobile-shell";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
+import { transactions } from "@/lib/transactions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -48,20 +49,6 @@ const quickActions = [
   { icon: Receipt, label: "Bills", to: "/transfer" as const },
   { icon: QrCode, label: "QR Pay", to: "/transfer" as const },
   { icon: ScanLine, label: "Scan", to: "/transfer" as const },
-];
-
-const transactions = [
-  {
-    id: 1,
-    name: "Starbucks Reserve",
-    cat: "Coffee & Snacks",
-    amount: -285,
-    time: "Today · 9:12 AM",
-    in: false,
-  },
-  { id: 2, name: "Salary — Acme Corp", cat: "Income", amount: 52000, time: "Yesterday", in: true },
-  { id: 3, name: "Grab Ride", cat: "Transport", amount: -142, time: "Yesterday", in: false },
-  { id: 4, name: "Round-Up Savings", cat: "Auto-save", amount: -18, time: "Mon", in: false },
 ];
 
 function ThemeToggle() {
@@ -309,41 +296,56 @@ function Dashboard() {
           </div>
         </section>
 
-        {/* Recent transactions (unchanged) */}
+        {/* Recent transactions */}
         <section className="px-5 mt-6">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold tracking-tight">Recent activity</h3>
-            <button className="text-xs font-medium text-emerald hover:underline">See all</button>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold tracking-tight">Recent activity</h3>
+              <p className="text-xs text-muted-foreground">Latest transactions for quick review</p>
+            </div>
+            <Link
+              to="/recent-activity"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-brand transition hover:text-brand/80"
+            >
+              See All <ChevronRight className="h-4 w-4" />
+            </Link>
           </div>
-          <ul className="divide-y divide-border rounded-3xl border border-border bg-card shadow-card overflow-hidden">
-            {transactions.map((tx) => (
+          <ul className="divide-y divide-border overflow-hidden rounded-3xl border border-border bg-card shadow-card">
+            {transactions.slice(0, 4).map((tx) => (
               <li key={tx.id} className="flex items-center gap-3 px-4 py-3.5">
                 <span
                   className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-2xl",
-                    tx.in ? "bg-emerald/15 text-emerald" : "bg-muted text-foreground",
+                    "flex h-12 w-12 items-center justify-center rounded-3xl",
+                    tx.in ? "bg-emerald/15 text-emerald" : "bg-destructive/10 text-destructive",
                   )}
                 >
                   {tx.in ? (
                     <ArrowDownLeft className="h-5 w-5" />
-                  ) : tx.cat.includes("Coffee") ? (
-                    <Coffee className="h-5 w-5" />
                   ) : (
                     <ArrowUpRight className="h-5 w-5" />
                   )}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{tx.name}</p>
-                  <p className="truncate text-[11px] text-muted-foreground">
-                    {tx.cat} · {tx.time}
+                  <p className="truncate text-sm font-semibold text-foreground">{tx.name}</p>
+                  <p className="mt-1 truncate text-[11px] text-muted-foreground">
+                    {tx.description}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className={cn("text-sm font-semibold tabular-nums", tx.in && "text-emerald")}>
-                    {tx.in ? "+" : "−"}₱{Math.abs(tx.amount).toLocaleString()}
+                <div className="flex flex-col items-end gap-0.5 text-right">
+                  <p
+                    className={cn(
+                      "text-sm font-semibold tabular-nums",
+                      tx.in ? "text-emerald" : "text-destructive",
+                    )}
+                  >
+                    {tx.in ? "+" : "−"}₱
+                    {Math.abs(tx.amount).toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </p>
+                  <p className="text-[11px] text-muted-foreground">{tx.time}</p>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </li>
             ))}
           </ul>

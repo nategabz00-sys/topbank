@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CardsRouteImport } from './routes/cards'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as QrRouteImport } from './routes/qr'
+import { Route as RecentActivityRouteImport } from './routes/recent-activity'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SavingsRouteImport } from './routes/savings'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -47,6 +48,11 @@ const LoginRoute = LoginRouteImport.update({
 const QrRoute = QrRouteImport.update({
   id: '/qr',
   path: '/qr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecentActivityRoute = RecentActivityRouteImport.update({
+  id: '/recent-activity',
+  path: '/recent-activity',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/cards': typeof CardsRoute
   '/login': typeof LoginRoute
   '/qr': typeof QrRouteWithChildren
+  '/recent-activity': typeof RecentActivityRoute
   '/register': typeof RegisterRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRouteWithChildren
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/cards': typeof CardsRoute
   '/login': typeof LoginRoute
   '/qr': typeof QrRouteWithChildren
+  '/recent-activity': typeof RecentActivityRoute
   '/register': typeof RegisterRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRouteWithChildren
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/cards': typeof CardsRoute
   '/login': typeof LoginRoute
   '/qr': typeof QrRouteWithChildren
+  '/recent-activity': typeof RecentActivityRoute
   '/register': typeof RegisterRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRouteWithChildren
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
     | '/cards'
     | '/login'
     | '/qr'
+    | '/recent-activity'
     | '/register'
     | '/savings'
     | '/settings'
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/cards'
     | '/login'
     | '/qr'
+    | '/recent-activity'
     | '/register'
     | '/savings'
     | '/settings'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/cards'
     | '/login'
     | '/qr'
+    | '/recent-activity'
     | '/register'
     | '/savings'
     | '/settings'
@@ -260,6 +272,7 @@ export interface RootRouteChildren {
   CardsRoute: typeof CardsRoute
   LoginRoute: typeof LoginRoute
   QrRoute: typeof QrRouteWithChildren
+  RecentActivityRoute: typeof RecentActivityRoute
   RegisterRoute: typeof RegisterRoute
   SavingsRoute: typeof SavingsRoute
   SettingsRoute: typeof SettingsRouteWithChildren
@@ -295,6 +308,13 @@ declare module '@tanstack/react-router' {
       path: '/qr'
       fullPath: '/qr'
       preLoaderRoute: typeof QrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recent-activity': {
+      id: '/recent-activity'
+      path: '/recent-activity'
+      fullPath: '/recent-activity'
+      preLoaderRoute: typeof RecentActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -448,6 +468,7 @@ const rootRouteChildren: RootRouteChildren = {
   CardsRoute: CardsRoute,
   LoginRoute: LoginRoute,
   QrRoute: QrRouteWithChildren,
+  RecentActivityRoute: RecentActivityRoute,
   RegisterRoute: RegisterRoute,
   SavingsRoute: SavingsRoute,
   SettingsRoute: SettingsRouteWithChildren,
