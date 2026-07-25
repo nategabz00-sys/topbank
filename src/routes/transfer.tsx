@@ -37,7 +37,7 @@ export const Route = createFileRoute("/transfer")({
   component: Transfer,
 });
 
-type View = "menu" | "reminder" | "form" | "review" | "success";
+type View = "menu" | "reminder" | "form" | "review" | "success" | "recent-all" | "favorites-all";
 type TransferFlow = "top-mobile" | "top-account" | "instapay" | "pesonet" | "bills";
 
 interface TransferRecipient {
@@ -141,7 +141,7 @@ function createDefaultFormState(previous?: FormState): FormState {
     recipientBank: "Top Bank",
     recipientMobile: "",
     note: "",
-    amount: previous?.amount ?? "2500",
+    amount: previous?.amount ?? "",
     biller: "",
     reference: "",
   };
@@ -154,6 +154,13 @@ function formatCurrency(value: string | number) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+function formatAmountDisplay(value: string) {
+  if (!value) return "";
+  const numeric = Number(value.toString().replace(/,/g, ""));
+  if (!Number.isFinite(numeric)) return "";
+  return formatCurrency(numeric);
 }
 
 function maskValue(value: string) {
@@ -172,6 +179,8 @@ function Transfer() {
   const [activeRecipient, setActiveRecipient] = useState<TransferRecipient | null>(null);
   const [recentRecipients, setRecentRecipients] = useState(initialRecentRecipients);
   const [favorites, setFavorites] = useState<string[]>(initialFavorites);
+  const [recentSearch, setRecentSearch] = useState("");
+  const [favoriteSearch, setFavoriteSearch] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
   const [receipt, setReceipt] = useState<TransferReceipt | null>(null);
@@ -198,6 +207,36 @@ function Transfer() {
   const amountNum = Number(formData.amount || 0);
   const total = amountNum;
 
+  const recentFiltered = useMemo(
+    () =>
+      recentRecipients.filter((recipient) => {
+        const search = recentSearch.toLowerCase();
+        return (
+          recipient.name.toLowerCase().includes(search) ||
+          recipient.detail.toLowerCase().includes(search) ||
+          recipient.bank?.toLowerCase().includes(search) ||
+          recipient.type.toLowerCase().includes(search)
+        );
+      }),
+    [recentRecipients, recentSearch],
+  );
+
+  const favoriteFiltered = useMemo(
+    () =>
+      recentRecipients
+        .filter((recipient) => favorites.includes(recipient.id))
+        .filter((recipient) => {
+          const search = favoriteSearch.toLowerCase();
+          return (
+            recipient.name.toLowerCase().includes(search) ||
+            recipient.detail.toLowerCase().includes(search) ||
+            recipient.bank?.toLowerCase().includes(search) ||
+            recipient.type.toLowerCase().includes(search)
+          );
+        }),
+    [favoriteSearch, favorites, recentRecipients],
+  );
+
   const openFlow = (nextFlow: TransferFlow, recipient?: TransferRecipient | null) => {
     setFlow(nextFlow);
     setErrors({});
@@ -213,6 +252,7 @@ function Transfer() {
         note: recipient.ref ?? "",
         biller: recipient.flow === "bills" ? recipient.name : prev.biller,
         reference: recipient.flow === "bills" ? recipient.detail : prev.reference,
+        amount: "",
       }));
     } else {
       setFormData((prev) => ({ ...createDefaultFormState(prev), amount: prev.amount }));
@@ -231,7 +271,12 @@ function Transfer() {
       setView("form");
       return;
     }
-    if (view === "form" || view === "reminder") {
+    if (
+      view === "form" ||
+      view === "reminder" ||
+      view === "recent-all" ||
+      view === "favorites-all"
+    ) {
       setFlow(null);
       setActiveRecipient(null);
       setView("menu");
@@ -358,17 +403,21 @@ function Transfer() {
   };
 
   const headerTitle =
-    flow === "instapay"
-      ? "InstaPay"
-      : flow === "pesonet"
-        ? "PESONet"
-        : flow === "bills"
-          ? "Bills Payment"
-          : flow === "top-mobile"
-            ? "Transfer with Mobile Number"
-            : flow === "top-account"
-              ? "Transfer with Account Number"
-              : "Transfer";
+    view === "recent-all"
+      ? "Recent Transfers"
+      : view === "favorites-all"
+        ? "Favorite Recipients"
+        : flow === "instapay"
+          ? "InstaPay"
+          : flow === "pesonet"
+            ? "PESONet"
+            : flow === "bills"
+              ? "Bills Payment"
+              : flow === "top-mobile"
+                ? "Transfer with Mobile Number"
+                : flow === "top-account"
+                  ? "Transfer with Account Number"
+                  : "Transfer";
 
   return (
     <MobileShell>
@@ -504,6 +553,13 @@ function Transfer() {
                 <h3 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                   Recent
                 </h3>
+                <button
+                  type="button"
+                  onClick={() => setView("recent-all")}
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-[#FF9A2F] hover:text-[#ff7a16]"
+                >
+                  See All <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
               <div className="space-y-2">
                 {recentRecipients.map((recipient) => {
@@ -562,6 +618,13 @@ function Transfer() {
                 <h3 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                   Favorites
                 </h3>
+                <button
+                  type="button"
+                  onClick={() => setView("favorites-all")}
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-[#FF9A2F] hover:text-[#ff7a16]"
+                >
+                  See All <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
               <div className="space-y-2">
                 {recentRecipients
@@ -763,23 +826,11 @@ function Transfer() {
                         <p className="mt-1 text-xs text-destructive">{errors.recipientName}</p>
                       )}
                     </div>
-                    <div>
-                      <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                        {flow === "top-mobile" ? "Amount" : "Account Number"}
-                      </label>
-                      {flow === "top-mobile" ? (
-                        <input
-                          value={formData.amount}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              amount: e.target.value.replace(/[^\d.]/g, ""),
-                            }))
-                          }
-                          className="mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-2xl font-semibold outline-none"
-                          placeholder="0.00"
-                        />
-                      ) : (
+                    {flow !== "top-mobile" && (
+                      <div>
+                        <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                          Account Number
+                        </label>
                         <input
                           value={formData.recipientAccount}
                           onChange={(e) =>
@@ -791,11 +842,11 @@ function Transfer() {
                           className="mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none"
                           placeholder="Account number"
                         />
-                      )}
-                      {errors.recipientAccount && (
-                        <p className="mt-1 text-xs text-destructive">{errors.recipientAccount}</p>
-                      )}
-                    </div>
+                        {errors.recipientAccount && (
+                          <p className="mt-1 text-xs text-destructive">{errors.recipientAccount}</p>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -803,17 +854,21 @@ function Transfer() {
                   <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                     Amount
                   </label>
-                  <input
-                    value={formData.amount}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        amount: e.target.value.replace(/[^\d.]/g, ""),
-                      }))
-                    }
-                    className="mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-2xl font-semibold outline-none"
-                    placeholder="0.00"
-                  />
+                  <div className="mt-2 flex items-center rounded-2xl border border-border bg-background px-4 py-3">
+                    <span className="text-sm font-semibold text-foreground">₱</span>
+                    <input
+                      value={formatAmountDisplay(formData.amount)}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          amount: e.target.value.replace(/[^0-9.]/g, ""),
+                        }))
+                      }
+                      inputMode="decimal"
+                      className="ml-2 w-full bg-transparent text-2xl font-semibold outline-none"
+                      placeholder="0.00"
+                    />
+                  </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     ₱{formatCurrency(formData.amount)} · Available {account.label}
                   </p>
@@ -855,8 +910,145 @@ function Transfer() {
               Continue <ChevronRight className="h-4 w-4" />
             </button>
           </section>
+        ) : view === "recent-all" ? (
+          <section className="min-h-[60vh] rounded-[28px] border border-border bg-card p-4 shadow-[0_16px_40px_-22px_rgba(15,23,42,0.24)]">
+            <div className="mb-4 flex flex-col gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                  Recent Transfers
+                </p>
+                <h2 className="text-lg font-semibold text-foreground">All recent recipients</h2>
+              </div>
+              <div className="rounded-2xl border border-border bg-background px-4 py-3">
+                <label className="sr-only" htmlFor="recent-search">
+                  Search recent recipients
+                </label>
+                <input
+                  id="recent-search"
+                  value={recentSearch}
+                  onChange={(e) => setRecentSearch(e.target.value)}
+                  placeholder="Search recipients, bank, or transfer type"
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                />
+              </div>
+            </div>
+            <div className="space-y-3 overflow-y-auto pb-4">
+              {recentFiltered.length === 0 ? (
+                <div className="rounded-3xl border border-border bg-background p-6 text-center text-sm text-muted-foreground">
+                  No recent recipients match your search.
+                </div>
+              ) : (
+                recentFiltered.map((recipient) => {
+                  const isFavorite = favorites.includes(recipient.id);
+                  return (
+                    <button
+                      key={recipient.id}
+                      type="button"
+                      onClick={() => openFlow(recipient.flow, recipient)}
+                      className="flex w-full items-start gap-3 rounded-[22px] border border-border bg-card p-4 text-left shadow-sm transition hover:bg-muted"
+                    >
+                      <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#FFF2E5] text-sm font-semibold text-[#FF9A2F] dark:bg-[#1f2937]">
+                        {recipient.logo}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="truncate text-sm font-semibold text-foreground">
+                            {recipient.name}
+                          </p>
+                          <span className="text-[11px] text-muted-foreground">
+                            {recipient.lastUsed}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {recipient.bank} · {maskValue(recipient.detail)}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold text-[#FF9A2F]">
+                          {recipient.type}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleFavorite(recipient.id);
+                        }}
+                        className={cn(
+                          "flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background transition-colors",
+                          isFavorite && "bg-[#FF9A2F]/10 text-[#FF9A2F]",
+                        )}
+                      >
+                        <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
+                      </button>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </section>
+        ) : view === "favorites-all" ? (
+          <section className="min-h-[60vh] rounded-[28px] border border-border bg-card p-4 shadow-[0_16px_40px_-22px_rgba(15,23,42,0.24)]">
+            <div className="mb-4 flex flex-col gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                  Favorite Recipients
+                </p>
+                <h2 className="text-lg font-semibold text-foreground">All favorites</h2>
+              </div>
+              <div className="rounded-2xl border border-border bg-background px-4 py-3">
+                <label className="sr-only" htmlFor="favorite-search">
+                  Search favorite recipients
+                </label>
+                <input
+                  id="favorite-search"
+                  value={favoriteSearch}
+                  onChange={(e) => setFavoriteSearch(e.target.value)}
+                  placeholder="Search favorites by name, bank, or transfer type"
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                />
+              </div>
+            </div>
+            <div className="space-y-3 overflow-y-auto pb-4">
+              {favoriteFiltered.length === 0 ? (
+                <div className="rounded-3xl border border-border bg-background p-6 text-center text-sm text-muted-foreground">
+                  No favorite recipients match your search.
+                </div>
+              ) : (
+                favoriteFiltered.map((recipient) => (
+                  <button
+                    key={recipient.id}
+                    type="button"
+                    onClick={() => openFlow(recipient.flow, recipient)}
+                    className="flex w-full items-start gap-3 rounded-[22px] border border-border bg-card p-4 text-left shadow-sm transition hover:bg-muted"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-[#FFF2E5] text-sm font-semibold text-[#FF9A2F] dark:bg-[#1f2937]">
+                      {recipient.logo}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {recipient.name}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {recipient.bank} · {maskValue(recipient.detail)}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-[#FF9A2F]">{recipient.type}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleFavorite(recipient.id);
+                      }}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-[#FF9A2F] transition-colors hover:bg-[#FF9A2F]/10"
+                    >
+                      <Star className="h-4 w-4 fill-current" />
+                    </button>
+                  </button>
+                ))
+              )}
+            </div>
+          </section>
         ) : view === "review" ? (
-          <section className="rounded-[28px] border border-border bg-card p-4 shadow-[0_16px_40px_-22px_rgba(15,23,42,0.24)]">
+          <section className="rounded-[28px] border border-border bg-card p-5 shadow-[0_16px_40px_-22px_rgba(15,23,42,0.24)]">
             <div className="rounded-[24px] border border-border/70 bg-background/70 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                 Review transfer
