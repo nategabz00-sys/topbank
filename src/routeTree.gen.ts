@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CardsRouteImport } from './routes/cards'
+import { Route as LoansRouteImport } from './routes/loans'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as QrRouteImport } from './routes/qr'
 import { Route as RecentActivityRouteImport } from './routes/recent-activity'
@@ -18,6 +19,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SavingsRouteImport } from './routes/savings'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TimeDepositRouteImport } from './routes/time-deposit'
 import { Route as TransferRouteImport } from './routes/transfer'
 import { Route as QrMyRouteImport } from './routes/qr/my'
 import { Route as QrScanRouteImport } from './routes/qr/scan'
@@ -38,6 +40,11 @@ const IndexRoute = IndexRouteImport.update({
 const CardsRoute = CardsRouteImport.update({
   id: '/cards',
   path: '/cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoansRoute = LoansRouteImport.update({
+  id: '/loans',
+  path: '/loans',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -73,6 +80,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TimeDepositRoute = TimeDepositRouteImport.update({
+  id: '/time-deposit',
+  path: '/time-deposit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TransferRoute = TransferRouteImport.update({
@@ -134,6 +146,7 @@ const SettingsTermsRoute = SettingsTermsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cards': typeof CardsRoute
+  '/loans': typeof LoansRoute
   '/login': typeof LoginRoute
   '/qr': typeof QrRouteWithChildren
   '/recent-activity': typeof RecentActivityRoute
@@ -141,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/time-deposit': typeof TimeDepositRoute
   '/transfer': typeof TransferRoute
   '/qr/my': typeof QrMyRoute
   '/qr/scan': typeof QrScanRoute
@@ -156,6 +170,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cards': typeof CardsRoute
+  '/loans': typeof LoansRoute
   '/login': typeof LoginRoute
   '/qr': typeof QrRouteWithChildren
   '/recent-activity': typeof RecentActivityRoute
@@ -163,6 +178,7 @@ export interface FileRoutesByTo {
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/time-deposit': typeof TimeDepositRoute
   '/transfer': typeof TransferRoute
   '/qr/my': typeof QrMyRoute
   '/qr/scan': typeof QrScanRoute
@@ -179,6 +195,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cards': typeof CardsRoute
+  '/loans': typeof LoansRoute
   '/login': typeof LoginRoute
   '/qr': typeof QrRouteWithChildren
   '/recent-activity': typeof RecentActivityRoute
@@ -186,6 +203,7 @@ export interface FileRoutesById {
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/time-deposit': typeof TimeDepositRoute
   '/transfer': typeof TransferRoute
   '/qr/my': typeof QrMyRoute
   '/qr/scan': typeof QrScanRoute
@@ -203,6 +221,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/cards'
+    | '/loans'
     | '/login'
     | '/qr'
     | '/recent-activity'
@@ -210,6 +229,7 @@ export interface FileRouteTypes {
     | '/savings'
     | '/settings'
     | '/sitemap.xml'
+    | '/time-deposit'
     | '/transfer'
     | '/qr/my'
     | '/qr/scan'
@@ -225,6 +245,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/cards'
+    | '/loans'
     | '/login'
     | '/qr'
     | '/recent-activity'
@@ -232,6 +253,7 @@ export interface FileRouteTypes {
     | '/savings'
     | '/settings'
     | '/sitemap.xml'
+    | '/time-deposit'
     | '/transfer'
     | '/qr/my'
     | '/qr/scan'
@@ -247,6 +269,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/cards'
+    | '/loans'
     | '/login'
     | '/qr'
     | '/recent-activity'
@@ -254,6 +277,7 @@ export interface FileRouteTypes {
     | '/savings'
     | '/settings'
     | '/sitemap.xml'
+    | '/time-deposit'
     | '/transfer'
     | '/qr/my'
     | '/qr/scan'
@@ -270,6 +294,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CardsRoute: typeof CardsRoute
+  LoansRoute: typeof LoansRoute
   LoginRoute: typeof LoginRoute
   QrRoute: typeof QrRouteWithChildren
   RecentActivityRoute: typeof RecentActivityRoute
@@ -277,6 +302,7 @@ export interface RootRouteChildren {
   SavingsRoute: typeof SavingsRoute
   SettingsRoute: typeof SettingsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TimeDepositRoute: typeof TimeDepositRoute
   TransferRoute: typeof TransferRoute
 }
 
@@ -294,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: '/cards'
       fullPath: '/cards'
       preLoaderRoute: typeof CardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loans': {
+      id: '/loans'
+      path: '/loans'
+      fullPath: '/loans'
+      preLoaderRoute: typeof LoansRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -343,6 +376,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/time-deposit': {
+      id: '/time-deposit'
+      path: '/time-deposit'
+      fullPath: '/time-deposit'
+      preLoaderRoute: typeof TimeDepositRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/transfer': {
@@ -466,6 +506,7 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CardsRoute: CardsRoute,
+  LoansRoute: LoansRoute,
   LoginRoute: LoginRoute,
   QrRoute: QrRouteWithChildren,
   RecentActivityRoute: RecentActivityRoute,
@@ -473,6 +514,7 @@ const rootRouteChildren: RootRouteChildren = {
   SavingsRoute: SavingsRoute,
   SettingsRoute: SettingsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TimeDepositRoute: TimeDepositRoute,
   TransferRoute: TransferRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,21 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
+  ArrowLeft,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Banknote,
+  Bell,
+  ChevronRight,
+  Coffee,
+  CreditCard,
+  Receipt,
+  Sparkles,
+  Star,
+  Sun,
+  TrendingUp,
+  QrCode,
   Eye,
   EyeOff,
   Moon,
-  Sun,
-  Send,
-  Receipt,
-  QrCode,
-  ScanLine,
-  Bell,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Coffee,
-  Sparkles,
-  TrendingUp,
-  ChevronRight,
 } from "lucide-react";
 import { MobileShell } from "@/components/mobile-shell";
 import { useTheme } from "@/components/theme-provider";
@@ -45,10 +47,10 @@ export const Route = createFileRoute("/")({
 });
 
 const quickActions = [
-  { icon: Send, label: "Transfer", to: "/transfer" as const },
-  { icon: Receipt, label: "Bills", to: "/transfer" as const },
-  { icon: QrCode, label: "QR Pay", to: "/transfer" as const },
-  { icon: ScanLine, label: "Scan", to: "/transfer" as const },
+  { icon: CreditCard, label: "Loans", to: "/loans" as const },
+  { icon: Receipt, label: "Bills Payment", to: "/transfer?flow=bills" as const },
+  { icon: Banknote, label: "Time Deposit", to: "/time-deposit" as const },
+  { icon: Star, label: "Favorites", to: "/transfer?view=favorites-all" as const },
 ];
 
 function ThemeToggle() {
@@ -205,28 +207,22 @@ function Dashboard() {
 
         {/* Quick actions */}
         <section className="px-5 mt-6">
-          <div className="flex justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 overflow-x-auto px-1 sm:px-0">
             {quickActions.map(({ icon: Icon, label, to }) => (
-              <Link key={label} to={to} className="flex-1">
-                <div className="flex flex-col items-center">
-                  <div
-                    className="flex h-16 w-16 items-center justify-center rounded-4xl bg-white"
-                    style={{
-                      boxShadow: "0 6px 18px rgba(15, 23, 42, 0.06)",
-                      border: "1px solid #ECECEC",
-                    }}
-                  >
-                    <span
-                      className="flex h-9 w-9 items-center justify-center rounded-full"
-                      style={{ background: "#F6EEE8" }}
-                    >
-                      <Icon className="h-5 w-5" strokeWidth={2.2} style={{ color: "#3A2F2A" }} />
-                    </span>
-                  </div>
-                  <span className="mt-2 text-[12px] font-medium" style={{ color: "#8A8A8A" }}>
-                    {label}
+              <Link
+                key={label}
+                to={to}
+                className="group inline-flex min-w-[92px] flex-1 flex-col items-center gap-3 text-center transition hover:-translate-y-0.5"
+              >
+                <span
+                  className="flex h-18 w-18 items-center justify-center rounded-full bg-white shadow-[0_16px_30px_rgba(15,23,42,0.08)] transition-colors duration-200 dark:bg-slate-800"
+                  style={{ minWidth: 72, minHeight: 72 }}
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F4E8DA] text-black shadow-sm dark:bg-slate-700 dark:text-black">
+                    <Icon className="h-5.5 w-5.5" strokeWidth={2.2} />
                   </span>
-                </div>
+                </span>
+                <span className="text-sm font-semibold text-foreground">{label}</span>
               </Link>
             ))}
           </div>

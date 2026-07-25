@@ -193,6 +193,8 @@ function Transfer() {
     const bank = params.get("bank");
     const ref = params.get("ref");
     const amountParam = params.get("amount");
+    const flowParam = params.get("flow") as TransferFlow | null;
+    const viewParam = params.get("view") as View | null;
 
     setFormData((prev) => ({
       ...prev,
@@ -202,6 +204,24 @@ function Transfer() {
       reference: ref ?? prev.reference,
       amount: amountParam ?? prev.amount,
     }));
+
+    if (
+      flowParam &&
+      ["top-mobile", "top-account", "instapay", "pesonet", "bills"].includes(flowParam)
+    ) {
+      setFlow(flowParam);
+      setView(flowParam === "instapay" || flowParam === "pesonet" ? "reminder" : "form");
+      setActiveRecipient(null);
+      setErrors({});
+      return;
+    }
+
+    if (viewParam === "recent-all" || viewParam === "favorites-all") {
+      setFlow(null);
+      setActiveRecipient(null);
+      setView(viewParam);
+      setErrors({});
+    }
   }, [search]);
 
   const amountNum = Number(formData.amount || 0);
