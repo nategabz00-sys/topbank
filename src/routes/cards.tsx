@@ -140,8 +140,7 @@ function Cards() {
       <div className="px-5 pt-8">
         {/* Header */}
         <div className="mb-6">
-          <p className="text-sm text-muted-foreground">Your Wallet</p>
-          <h1 className="text-2xl font-bold text-foreground mt-1">Cards</h1>
+          <h1 className="text-2xl font-bold text-foreground mt-1">Your Wallet</h1>
         </div>
 
         <div className="relative mx-auto w-full max-w-sm" style={{ perspective: "1400px" }}>
