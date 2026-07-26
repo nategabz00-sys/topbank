@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, type MouseEvent } from "react";
+import { useState, useEffect, type MouseEvent } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -33,25 +33,40 @@ export const Route = createFileRoute("/cards")({
 
 const cards = [
   {
-    kind: "Platinum Debit",
-    last: "4271",
-    fullNumber: "1234 5678 9012 4271",
-    grad: "gradient-card",
+    kind: "Everyday",
+    type: "DEBIT",
+    last: "6038",
+    fullNumber: "4539 8821 4402 6038",
+    expiry: "08/29",
+    bgGradient: "from-[#FFB968] via-[#FF9A2F] to-[#F97316]",
+    chipColor: "from-yellow-300 to-yellow-500",
+    network: "VISA",
     cvv: "•••",
+    cardHolder: "JOHN PAUL CRUZ",
   },
   {
-    kind: "Virtual Card",
-    last: "8802",
-    fullNumber: "2345 6789 0123 8802",
-    grad: "gradient-emerald",
+    kind: "Platinum",
+    type: "CREDIT",
+    last: "2210",
+    fullNumber: "5412 7788 3341 2210",
+    expiry: "11/28",
+    bgGradient: "from-[#4B5563] via-[#374151] to-[#1F2937]",
+    chipColor: "from-yellow-300 to-yellow-500",
+    network: "MASTERCARD",
     cvv: "•••",
+    cardHolder: "JOHN PAUL CRUZ",
   },
   {
-    kind: "Travel Card",
-    last: "1194",
-    fullNumber: "3456 7890 1234 1194",
-    grad: "gradient-brand",
+    kind: "Savings",
+    type: "DEBIT",
+    last: "8842",
+    fullNumber: "4716 3390 5521 8842",
+    expiry: "02/30",
+    bgGradient: "from-[#10B981] to-[#059669]",
+    chipColor: "from-yellow-300 to-yellow-500",
+    network: "VISA",
     cvv: "•••",
+    cardHolder: "JOHN PAUL CRUZ",
   },
 ];
 
@@ -59,9 +74,28 @@ function Cards() {
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState<Record<number, boolean>>({});
   const [revealedNumbers, setRevealedNumbers] = useState<Record<number, boolean>>({});
+  const [slideDirection, setSlideDirection] = useState<"next" | "prev">("next");
+  const [transitionKey, setTransitionKey] = useState(0);
   const c = cards[idx];
   const isRevealed = !!revealedNumbers[idx];
   const displayNumber = isRevealed ? c.fullNumber : `•••• •••• •••• ${c.last}`;
+  const shouldAnimate = transitionKey > 0;
+
+  // Reset flip state when navigating to a different card
+  useEffect(() => {
+    setFlipped((current) => ({ ...current, [idx]: false }));
+  }, [idx]);
+
+  const getGradientStyle = (gradient: string) => {
+    const gradientMap: Record<string, string> = {
+      "from-[#FFB968] via-[#FF9A2F] to-[#F97316]":
+        "linear-gradient(135deg, #FFB968 0%, #FF9A2F 50%, #F97316 100%)",
+      "from-[#4B5563] via-[#374151] to-[#1F2937]":
+        "linear-gradient(135deg, #4B5563 0%, #374151 50%, #1F2937 100%)",
+      "from-[#10B981] to-[#059669]": "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+    };
+    return gradientMap[gradient] || gradient;
+  };
 
   const handleFlip = () => {
     setFlipped((current) => ({ ...current, [idx]: !current[idx] }));
@@ -72,34 +106,66 @@ function Cards() {
     setRevealedNumbers((current) => ({ ...current, [idx]: !current[idx] }));
   };
 
-  const goToCard = (nextIdx: number) => {
+  const goToCard = (nextIdx: number, direction: "next" | "prev" = "next") => {
+    setSlideDirection(direction);
+    setTransitionKey((current) => current + 1);
     setIdx((nextIdx + cards.length) % cards.length);
   };
 
   return (
     <MobileShell>
+      <style>{`
+        @keyframes slideInFromRight {
+          from {
+            opacity: 0;
+            transform: translateX(24px) scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+          }
+        }
+
+        @keyframes slideInFromLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-24px) scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+          }
+        }
+      `}</style>
       <div className="px-5 pt-8">
+        {/* Header */}
+        <div className="mb-6">
+          <p className="text-sm text-muted-foreground">Your Wallet</p>
+          <h1 className="text-2xl font-bold text-foreground mt-1">Cards</h1>
+        </div>
+
         <div className="relative mx-auto w-full max-w-sm" style={{ perspective: "1400px" }}>
-          <div className="relative mx-auto aspect-[1.6/1] w-full max-w-sm">
+          <div
+            key={`${idx}-${transitionKey}`}
+            className="relative mx-auto aspect-[1.6/1] w-full max-w-sm overflow-hidden rounded-3xl transition-all duration-300 ease-in-out"
+            style={{
+              animation: shouldAnimate
+                ? slideDirection === "next"
+                  ? "slideInFromRight 0.28s ease-in-out"
+                  : "slideInFromLeft 0.28s ease-in-out"
+                : "none",
+              willChange: "transform, opacity",
+            }}
+          >
             <button
               type="button"
               onClick={handleFlip}
               aria-label={`Flip ${c.kind}`}
-              className="relative block h-full w-full overflow-hidden rounded-3xl text-left shadow-elevated"
+              className="relative block h-full w-full overflow-hidden rounded-3xl text-left shadow-elevated transition-all duration-300"
               style={{ transformStyle: "preserve-3d", perspective: "1400px" }}
             >
-              <button
-                type="button"
-                onClick={handleReveal}
-                aria-label={isRevealed ? `Hide ${c.kind} number` : `Show ${c.kind} number`}
-                aria-pressed={isRevealed}
-                className="absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/35 bg-white/10 text-white shadow-lg backdrop-blur-sm transition hover:bg-white/20"
-              >
-                {isRevealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-
               <div
-                className="relative h-full w-full transition-transform duration-500"
+                className="relative h-full w-full transition-transform duration-500 ease-in-out"
                 style={{
                   transformStyle: "preserve-3d",
                   transform: !!flipped[idx] ? "rotateY(180deg)" : "rotateY(0deg)",
@@ -107,30 +173,54 @@ function Cards() {
               >
                 {/* Front */}
                 <div
-                  className={cn("absolute inset-0 rounded-3xl p-5 text-white", c.grad)}
-                  style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
+                  className="absolute inset-0 rounded-3xl p-6 text-white overflow-hidden flex flex-col"
+                  style={{
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                    background: getGradientStyle(c.bgGradient),
+                  }}
                 >
-                  <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
-                  <div className="absolute -bottom-6 -left-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
-                  <div className="absolute inset-[1px] rounded-[calc(1.5rem-1px)] border border-white/10" />
+                  {/* Diagonal stripe pattern */}
+                  <div
+                    className="absolute inset-0 opacity-10"
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,0.1) 35px, rgba(255,255,255,0.1) 70px)",
+                      pointerEvents: "none",
+                    }}
+                  />
 
-                  <div className="flex items-start justify-between">
+                  {/* Top header with logo and badge */}
+                  <div className="relative z-10 flex items-start justify-between mb-2">
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-white/60">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-white/90">
                         Top Bank
                       </p>
-                      <p className="mt-0.5 text-sm font-semibold">{c.kind}</p>
+                      <p className="text-lg font-semibold text-white mt-0.5">{c.kind}</p>
                     </div>
-                    <Wifi className="h-5 w-5 rotate-90 text-white/80" />
+                    <div className="rounded-full border border-white/40 px-3 py-1 text-xs font-semibold uppercase tracking-wide bg-white/15 backdrop-blur-sm">
+                      {c.type}
+                    </div>
                   </div>
 
-                  <div className="absolute left-5 top-14 flex items-center gap-2">
-                    <div className="h-8 w-11 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm" />
-                    <div className="h-1.5 w-9 rounded-full bg-white/35" />
+                  {/* Chip and contactless icon */}
+                  <div className="relative z-10 flex items-center gap-3 mb-4">
+                    <div
+                      className="h-10 w-14 rounded-md shadow-lg"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #FCD34D 0%, #FBBF24 50%, #F59E0B 100%)",
+                      }}
+                    />
+                    <Wifi className="h-5 w-5 text-white/80 rotate-90" />
                   </div>
 
-                  <div className="absolute bottom-5 left-5 right-5">
-                    <p className="font-mono text-lg tracking-widest tabular-nums transition-all duration-300">
+                  {/* Middle spacer */}
+                  <div className="relative z-10 flex-1" />
+
+                  {/* Card number - centered in middle */}
+                  <div className="relative z-10 mb-6 flex items-center justify-start">
+                    <p className="font-mono text-2xl font-semibold tracking-widest tabular-nums">
                       <span
                         className={cn(
                           "transition-opacity duration-300",
@@ -140,25 +230,63 @@ function Cards() {
                         {displayNumber}
                       </span>
                     </p>
-                    <div className="mt-2 flex items-end justify-between text-[11px] text-white/70">
-                      <span>JOHN PAUL CRUZ</span>
-                      <span className="font-bold italic text-white">TB</span>
+                    <button
+                      type="button"
+                      onClick={handleReveal}
+                      aria-label={isRevealed ? `Hide card number` : `Show card number`}
+                      aria-pressed={isRevealed}
+                      className="inline-flex h-7 w-7 items-center justify-center text-white/70 hover:text-white transition shrink-0 ml-2"
+                    >
+                      {isRevealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+
+                  {/* Bottom section: cardholder, expiry, network - anchored to bottom */}
+                  <div className="relative z-10 flex items-end justify-between gap-1">
+                    <div className="flex-1">
+                      <p className="text-[8px] uppercase tracking-wider text-white/70 font-semibold leading-tight">
+                        Card Holder
+                      </p>
+                      <p className="text-xs font-semibold text-white uppercase leading-tight mt-0.5">
+                        {c.cardHolder}
+                      </p>
+                    </div>
+
+                    <div className="flex-1 text-center">
+                      <p className="text-[8px] uppercase tracking-wider text-white/70 font-semibold leading-tight">
+                        Valid Thru
+                      </p>
+                      <p className="text-xs font-semibold text-white leading-tight mt-0.5">
+                        {c.expiry}
+                      </p>
+                    </div>
+
+                    <div className="flex-1 flex justify-end items-end">
+                      {c.network === "MASTERCARD" ? (
+                        <div className="flex gap-1">
+                          <div className="h-5 w-5 rounded-full bg-red-500 shadow-lg" />
+                          <div className="h-5 w-5 rounded-full bg-yellow-400 shadow-lg" />
+                        </div>
+                      ) : (
+                        <p className="text-base font-bold text-white">{c.network}</p>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Back */}
                 <div
-                  className={cn("absolute inset-0 rounded-3xl overflow-hidden text-white", c.grad)}
+                  className="absolute inset-0 rounded-3xl overflow-hidden text-white"
                   style={{
                     backfaceVisibility: "hidden",
                     WebkitBackfaceVisibility: "hidden",
                     transform: "rotateY(180deg)",
+                    background: getGradientStyle(c.bgGradient),
                   }}
                 >
                   <div className="absolute left-0 right-0 top-6 h-10 bg-black/80" />
 
-                  <div className="absolute left-5 right-5 top-24 flex items-center gap-3">
+                  <div className="absolute left-6 right-6 top-24 flex items-center gap-3">
                     <div className="relative h-9 flex-1 overflow-hidden rounded-md bg-white/95">
                       <div
                         className="absolute inset-0"
@@ -168,7 +296,7 @@ function Cards() {
                         }}
                       />
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 font-[cursive] text-[13px] italic text-neutral-700">
-                        John Paul Cruz
+                        {c.cardHolder}
                       </span>
                     </div>
                     <div className="flex h-9 w-16 flex-col items-center justify-center rounded-md bg-white text-neutral-900">
@@ -179,7 +307,7 @@ function Cards() {
                     </div>
                   </div>
 
-                  <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between">
+                  <div className="absolute bottom-4 left-6 right-6 flex items-end justify-between">
                     <div>
                       <p className="text-[9px] uppercase tracking-widest text-white/60">
                         Customer service
@@ -189,7 +317,7 @@ function Cards() {
                     <span className="font-bold italic text-white">TB</span>
                   </div>
 
-                  <p className="absolute left-5 right-5 top-[70%] text-[8px] leading-tight text-white/50">
+                  <p className="absolute left-6 right-6 top-[70%] text-[8px] leading-tight text-white/50">
                     This card is property of Top Bank. Unauthorized use is prohibited. If found,
                     please return to any Top Bank branch.
                   </p>
@@ -202,7 +330,7 @@ function Cards() {
         <div className="mt-5 flex items-center justify-center gap-4">
           <button
             type="button"
-            onClick={() => goToCard(idx - 1)}
+            onClick={() => goToCard(idx - 1, "prev")}
             aria-label="Previous card"
             disabled={idx === 0}
             className={cn(
@@ -229,7 +357,7 @@ function Cards() {
 
           <button
             type="button"
-            onClick={() => goToCard(idx + 1)}
+            onClick={() => goToCard(idx + 1, "next")}
             aria-label="Next card"
             disabled={idx === cards.length - 1}
             className={cn(
