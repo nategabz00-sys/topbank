@@ -563,6 +563,7 @@ function Transfer() {
                 subtitle="Settle electricity, water, and other bills"
                 icon={<Banknote className="h-5 w-5" />}
                 onClick={() => openFlow("bills")}
+                className="w-full"
               />
             </section>
 
@@ -1129,17 +1130,22 @@ function TransferOptionCard({
   subtitle,
   icon,
   onClick,
+  className,
 }: {
   title: string;
   subtitle: string;
   icon: ReactNode;
   onClick: () => void;
+  className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center justify-between rounded-[24px] border border-border bg-card p-4 text-left shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
+      className={cn(
+        "flex items-center justify-between rounded-[24px] border border-border bg-card p-4 text-left shadow-sm transition-transform duration-200 hover:-translate-y-0.5",
+        className,
+      )}
     >
       <div className="flex items-center gap-3">
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF2E5] text-[#FF9A2F] dark:bg-[#1f2937]">
