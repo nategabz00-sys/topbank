@@ -464,9 +464,7 @@ function Transfer() {
             <section className="rounded-[28px] border border-border/60 bg-card p-5 shadow-[0_16px_40px_-22px_rgba(15,23,42,0.24)]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                    Transfer
-                  </p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground"></p>
                   <h1 className="mt-1 text-2xl font-semibold text-foreground">
                     Move money with ease
                   </h1>
