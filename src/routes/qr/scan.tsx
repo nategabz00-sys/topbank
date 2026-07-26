@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ScanLine, Upload, ArrowRight, ArrowLeft } from "lucide-react";
+import { ScanLine, Upload, ArrowRight, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import {
   buildTransferUrl,
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/qr/scan")({
   component: ScanQR,
 });
 
-function ScanQR() {
+export function ScanQR() {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -186,61 +186,60 @@ function ScanQR() {
   }, [message, status]);
 
   return (
-    <div className="bg-[#FFF8F2] dark:bg-background min-h-full px-5 pb-6 pt-6">
-      <div className="space-y-5">
-        <div className="rounded-3xl border border-border bg-white p-4 shadow-card dark:bg-slate-900">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Scan or upload a QR code</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                The app will prefill the recipient and take you to transfer.
-              </p>
-            </div>
-            <span className="flex h-11 w-11 items-center justify-center rounded-3xl bg-[#FF9A2F]/10 text-[#FF9A2F] shadow-sm">
-              <ScanLine className="h-5 w-5" />
-            </span>
-          </div>
-          <div className="relative overflow-hidden rounded-3xl border border-dashed border-border bg-slate-100 dark:bg-slate-800">
-            <video ref={videoRef} className="h-72 w-full object-cover" muted playsInline />
-            <div className="pointer-events-none absolute inset-x-0 top-1/2 h-0.5 bg-[#FF9A2F] opacity-80 shadow-glow" />
-            {!supportsCamera && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/70 text-sm text-muted-foreground">
-                Camera unavailable. Upload an image to proceed.
-              </div>
-            )}
-          </div>
+    <div className="flex min-h-full flex-col bg-[#FFF8F2] px-3 pb-3 pt-3 dark:bg-background">
+      <div className="relative flex-1 overflow-hidden rounded-[2rem] border border-border bg-black shadow-card">
+        <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
+
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,transparent_40%,rgba(15,23,42,0.28)_100%)]" />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="h-56 w-56 rounded-[2.2rem] border-[3px] border-[#FF9A2F]/85 shadow-[0_0_0_9999px_rgba(15,23,42,0.28)]" />
         </div>
 
-        {renderStatus}
+        <div className="absolute inset-x-3 top-3">{renderStatus}</div>
 
-        <div className="grid gap-3">
+        {!supportsCamera && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/70 px-6 text-center text-sm text-muted-foreground">
+            Camera unavailable. Upload an image to proceed.
+          </div>
+        )}
+      </div>
+
+      <div className="sticky bottom-0 z-20 mt-3 rounded-[28px] border border-border/70 bg-[#FFF8F2]/95 p-3 shadow-[0_-10px_30px_-18px_rgba(15,23,42,0.32)] backdrop-blur dark:bg-background/95">
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/qr/my" })}
+            className="inline-flex items-center justify-center gap-2 rounded-3xl border border-border bg-white px-3 py-3 text-sm font-semibold text-foreground shadow-card transition hover:bg-muted dark:bg-slate-900"
+          >
+            <QrCode className="h-4 w-4" /> My QR
+          </button>
           <button
             type="button"
             onClick={triggerUpload}
             disabled={busy}
-            className="inline-flex items-center justify-center gap-2 rounded-3xl border border-border bg-white px-4 py-4 text-sm font-semibold text-foreground shadow-card transition hover:bg-muted dark:bg-slate-900"
+            className="inline-flex items-center justify-center gap-2 rounded-3xl bg-[#FF9A2F] px-3 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Upload className="h-4 w-4" /> Upload QR image
+            <Upload className="h-4 w-4" /> Upload QR
           </button>
-          {status === "error" && (
-            <button
-              type="button"
-              onClick={handleRetryCamera}
-              className="inline-flex items-center justify-center gap-2 rounded-3xl bg-[#FF9A2F] px-4 py-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ff7a2f]"
-            >
-              <ArrowRight className="h-4 w-4" /> Retry camera
-            </button>
-          )}
         </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
+        {status === "error" && (
+          <button
+            type="button"
+            onClick={handleRetryCamera}
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-3xl border border-[#FF9A2F]/30 bg-[#FF9A2F]/10 px-4 py-3 text-sm font-semibold text-[#FF9A2F] transition hover:bg-[#FF9A2F]/20"
+          >
+            <ArrowRight className="h-4 w-4" /> Retry camera
+          </button>
+        )}
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
     </div>
   );
 }

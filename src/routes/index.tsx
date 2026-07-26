@@ -180,7 +180,7 @@ function Dashboard() {
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-5xl font-extrabold tracking-tight tabular-nums">
-                  {hidden ? "••••" : "82"}
+                  {hidden ? "••••" : "8,500"}
                 </span>
                 <span className="text-lg font-semibold text-white/90">{hidden ? "" : ".00"}</span>
                 <span className="ml-2 text-sm font-medium">PHP</span>
