@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowRight, Eye, EyeOff, User, Mail, Phone, AtSign, Lock } from "lucide-react";
 import { MobileShell } from "@/components/mobile-shell";
-import logoAsset from "@/assets/top-bank-logo-official.jpg.asset.json";
+import { Logo } from "@/components/logo";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -26,7 +26,15 @@ interface FieldProps {
   trailing?: React.ReactNode;
 }
 
-function Field({ label, type = "text", placeholder, icon: Icon, value, onChange, trailing }: FieldProps) {
+function Field({
+  label,
+  type = "text",
+  placeholder,
+  icon: Icon,
+  value,
+  onChange,
+  trailing,
+}: FieldProps) {
   return (
     <label className="block">
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
@@ -65,24 +73,13 @@ function Register() {
   return (
     <MobileShell hideNav>
       <div className="flex min-h-dvh flex-col px-6 pt-8 pb-8">
-        <div className="flex flex-col items-center gap-2">
-          <img
-            src={logoAsset.url}
-            alt="Top Bank logo"
-            width={64}
-            height={64}
-            className="h-16 w-16 drop-shadow-[0_8px_24px_rgba(242,140,40,0.3)]"
-          />
-          <span className="text-sm font-semibold tracking-tight text-foreground">Top Bank</span>
-        </div>
+        <Logo size="sm" withLabel />
 
         <div className="mt-6 text-center float-in">
           <h1 className="text-2xl font-bold tracking-tight leading-tight">
             Create your account<span className="text-emerald">.</span>
           </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Join Top Bank in just a few steps.
-          </p>
+          <p className="mt-1.5 text-sm text-muted-foreground">Join Top Bank in just a few steps.</p>
         </div>
 
         <form
@@ -102,12 +99,44 @@ function Register() {
           className="mt-6 space-y-3.5"
         >
           <div className="grid grid-cols-2 gap-3">
-            <Field label="First name" icon={User} placeholder="Alexis" value={form.firstName} onChange={set("firstName")} />
-            <Field label="Last name" icon={User} placeholder="Cruz" value={form.lastName} onChange={set("lastName")} />
+            <Field
+              label="First name"
+              icon={User}
+              placeholder="Alexis"
+              value={form.firstName}
+              onChange={set("firstName")}
+            />
+            <Field
+              label="Last name"
+              icon={User}
+              placeholder="Cruz"
+              value={form.lastName}
+              onChange={set("lastName")}
+            />
           </div>
-          <Field label="Email address" type="email" icon={Mail} placeholder="you@example.com" value={form.email} onChange={set("email")} />
-          <Field label="Mobile number" type="tel" icon={Phone} placeholder="+63 917 000 0000" value={form.mobile} onChange={set("mobile")} />
-          <Field label="Username" icon={AtSign} placeholder="alexis.cruz" value={form.username} onChange={set("username")} />
+          <Field
+            label="Email address"
+            type="email"
+            icon={Mail}
+            placeholder="you@example.com"
+            value={form.email}
+            onChange={set("email")}
+          />
+          <Field
+            label="Mobile number"
+            type="tel"
+            icon={Phone}
+            placeholder="+63 917 000 0000"
+            value={form.mobile}
+            onChange={set("mobile")}
+          />
+          <Field
+            label="Username"
+            icon={AtSign}
+            placeholder="alexis.cruz"
+            value={form.username}
+            onChange={set("username")}
+          />
           <Field
             label="Password"
             type={show ? "text" : "password"}
