@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -54,6 +54,12 @@ const quickActions = [
   { icon: Star, label: "Favorites", to: "/transfer" as const, search: { view: "favorites-all" } },
 ];
 
+const promoItems = [
+  { title: "Earn 5% p.a.", desc: "Time Deposit promo", tone: "brand" },
+  { title: "Zero fees", desc: "Send abroad free · 30d", tone: "emerald" },
+  { title: "Cashback ×2", desc: "Weekend swipes", tone: "brand" },
+];
+
 function ThemeToggle() {
   const { theme, toggle } = useTheme();
   return (
@@ -70,6 +76,101 @@ function ThemeToggle() {
 
 function Dashboard() {
   const [hidden, setHidden] = useState(false);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+  const slideWidthRef = useRef(0);
+  const pauseTimeoutRef = useRef<number | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const carouselItems = [
+    { ...promoItems[promoItems.length - 1], promoIndex: promoItems.length - 1, cloneType: "clone" },
+    ...promoItems.map((it, idx) => ({ ...it, promoIndex: idx, cloneType: "original" })),
+    { ...promoItems[0], promoIndex: 0, cloneType: "clone" },
+  ];
+
+  useEffect(() => {
+    const container = carouselRef.current;
+    if (!container) return;
+
+    const originals = Array.from(
+      container.querySelectorAll<HTMLElement>('[data-clone-type="original"]'),
+    );
+    if (originals.length !== promoItems.length) return;
+
+    const itemWidth = originals[0].offsetWidth;
+    const gap = originals[1].offsetLeft - originals[0].offsetLeft - itemWidth;
+    const slideWidth = itemWidth + gap;
+    slideWidthRef.current = slideWidth;
+
+    // Center first original slide on mount
+    requestAnimationFrame(() => {
+      const first = container.querySelector<HTMLElement>(
+        `[data-promo-index="0"][data-clone-type=\"original\"]`,
+      );
+      first?.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+    });
+
+    const setScrollPosition = (value: number) => {
+      const prev = container.style.scrollBehavior;
+      container.style.scrollBehavior = "auto";
+      container.scrollLeft = value;
+      container.style.scrollBehavior = prev;
+    };
+
+    const handleLoopReset = () => {
+      const currentScroll = container.scrollLeft;
+      const leftBoundary = slideWidth * 0.5;
+      const rightBoundary = slideWidth * (promoItems.length + 0.5);
+      if (currentScroll <= leftBoundary) {
+        setScrollPosition(slideWidth * promoItems.length);
+      } else if (currentScroll >= rightBoundary) {
+        setScrollPosition(slideWidth);
+      }
+    };
+
+    const handleScroll = () => {
+      // update active index by center
+      const center = container.scrollLeft + container.clientWidth / 2;
+      let closest = 0;
+      let closestDistance = Infinity;
+      const cards = Array.from(container.querySelectorAll<HTMLElement>("[data-promo-index]"));
+      cards.forEach((card) => {
+        const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+        const dist = Math.abs(cardCenter - center);
+        if (dist < closestDistance) {
+          closestDistance = dist;
+          closest = Number(card.dataset.promoIndex ?? 0);
+        }
+      });
+      setActiveIndex(closest);
+      handleLoopReset();
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    container.addEventListener(
+      "touchstart",
+      () => {
+        setIsPaused(true);
+        if (pauseTimeoutRef.current) window.clearTimeout(pauseTimeoutRef.current);
+        pauseTimeoutRef.current = window.setTimeout(() => setIsPaused(false), 4200);
+      },
+      { passive: true },
+    );
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isPaused) return;
+    const id = window.setInterval(() => {
+      const container = carouselRef.current;
+      const slide = slideWidthRef.current;
+      if (!container || !slide) return;
+      container.scrollBy({ left: slide, behavior: "smooth" });
+    }, 4200);
+    return () => window.clearInterval(id);
+  }, [isPaused]);
   const weeklyMax = Math.max(...weeklySpending.map((item) => item.amount));
   const weeklyAverage = Math.round(
     weeklySpending.reduce((sum, item) => sum + item.amount, 0) / weeklySpending.length,
@@ -244,28 +345,63 @@ function Dashboard() {
           </div>
         </section>
 
-        {/* Promo carousel (unchanged) */}
+        {/* Promo carousel */}
         <section className="mt-6">
-          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
-            {[
-              { title: "Earn 5% p.a.", desc: "Time Deposit promo", tone: "brand" },
-              { title: "Zero fees", desc: "Send abroad free · 30d", tone: "emerald" },
-              { title: "Cashback ×2", desc: "Weekend swipes", tone: "brand" },
-            ].map((p, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "snap-start shrink-0 w-[78%] rounded-2xl p-4 shadow-card",
-                  p.tone === "brand"
-                    ? "gradient-brand text-white"
-                    : "gradient-emerald text-emerald-foreground",
-                )}
-              >
-                <Sparkles className="h-4 w-4 opacity-80" />
-                <p className="mt-2 text-lg font-bold tracking-tight">{p.title}</p>
-                <p className="text-xs opacity-80">{p.desc}</p>
-              </div>
-            ))}
+          <div className="relative overflow-hidden rounded-2xl px-5">
+            <div
+              ref={carouselRef}
+              className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 pt-2 scroll-smooth touch-pan-x scrollbar-none [&::-webkit-scrollbar]:hidden"
+              aria-label="Promo carousel"
+              style={{ touchAction: "pan-x" }}
+            >
+              {carouselItems.map((p, i) => (
+                <div
+                  key={`${p.cloneType}-${i}`}
+                  data-promo-index={p.promoIndex}
+                  data-clone-type={p.cloneType}
+                  className={cn(
+                    "snap-center shrink-0 w-[78%] rounded-2xl p-4 shadow-card",
+                    p.tone === "brand"
+                      ? "gradient-brand text-white"
+                      : "gradient-emerald text-emerald-foreground",
+                  )}
+                >
+                  <Sparkles className="h-4 w-4 opacity-80" />
+                  <p className="mt-2 text-lg font-bold tracking-tight">{p.title}</p>
+                  <p className="text-xs opacity-80">{p.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex justify-center gap-2">
+              {promoItems.map((_, idx) => (
+                <button
+                  key={idx}
+                  aria-label={`Show promo ${idx + 1}`}
+                  onClick={() => {
+                    const container = carouselRef.current;
+                    if (!container) return;
+                    const target = container.querySelector<HTMLElement>(
+                      `[data-promo-index="${idx}"][data-clone-type="original"]`,
+                    );
+                    target?.scrollIntoView({
+                      behavior: "smooth",
+                      inline: "center",
+                      block: "nearest",
+                    });
+                    setIsPaused(true);
+                    if (pauseTimeoutRef.current) window.clearTimeout(pauseTimeoutRef.current);
+                    pauseTimeoutRef.current = window.setTimeout(() => setIsPaused(false), 4200);
+                  }}
+                  className={cn(
+                    "h-2.5 w-2.5 rounded-full border transition-colors duration-200",
+                    activeIndex === idx
+                      ? "bg-amber-500 border-amber-500"
+                      : "bg-slate-200 border-slate-300 dark:bg-slate-700 dark:border-slate-600",
+                  )}
+                />
+              ))}
+            </div>
           </div>
         </section>
 
