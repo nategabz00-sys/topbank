@@ -21,8 +21,9 @@ import {
 } from "lucide-react";
 import { MobileShell } from "@/components/mobile-shell";
 import { useTheme } from "@/components/theme-provider";
+import { currentUser } from "@/lib/user";
 import { cn } from "@/lib/utils";
-import { transactions } from "@/lib/transactions";
+import { transactions, weeklySpending } from "@/lib/transactions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -48,9 +49,9 @@ export const Route = createFileRoute("/")({
 
 const quickActions = [
   { icon: CreditCard, label: "Loans", to: "/loans" as const },
-  { icon: Receipt, label: "Bills Payment", to: "/transfer?flow=bills" as const },
+  { icon: Receipt, label: "Bills Payment", to: "/transfer" as const, search: { flow: "bills" } },
   { icon: Banknote, label: "Time Deposit", to: "/time-deposit" as const },
-  { icon: Star, label: "Favorites", to: "/transfer?view=favorites-all" as const },
+  { icon: Star, label: "Favorites", to: "/transfer" as const, search: { view: "favorites-all" } },
 ];
 
 function ThemeToggle() {
@@ -69,6 +70,15 @@ function ThemeToggle() {
 
 function Dashboard() {
   const [hidden, setHidden] = useState(false);
+  const weeklyMax = Math.max(...weeklySpending.map((item) => item.amount));
+  const weeklyAverage = Math.round(
+    weeklySpending.reduce((sum, item) => sum + item.amount, 0) / weeklySpending.length,
+  );
+  const formattedWeeklyAverage = new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    maximumFractionDigits: 0,
+  }).format(weeklyAverage);
 
   return (
     <MobileShell>
@@ -79,10 +89,15 @@ function Dashboard() {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div
-                  className="flex h-12 w-12 items-center justify-center rounded-full"
+                  className="flex h-12 w-12 items-center justify-center rounded-full text-white font-semibold"
                   style={{ background: "linear-gradient(135deg,#FF9A2F,#FFC78A)" }}
                 >
-                  <span className="text-white font-semibold">SM</span>
+                  {currentUser.name
+                    .split(" ")
+                    .map((part) => part[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()}
                 </div>
                 <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald ring-2 ring-white" />
               </div>
@@ -91,7 +106,7 @@ function Dashboard() {
                   Welcome back
                 </p>
                 <h2 className="text-lg font-bold" style={{ color: "#1F2937" }}>
-                  John Paul
+                  {currentUser.name.split(" ").slice(0, 2).join(" ")}
                 </h2>
               </div>
             </div>
@@ -208,11 +223,12 @@ function Dashboard() {
         {/* Quick actions */}
         <section className="px-5 mt-6">
           <div className="flex items-start justify-between gap-3 overflow-x-auto px-1 sm:px-0">
-            {quickActions.map(({ icon: Icon, label, to }) => (
+            {quickActions.map(({ icon: Icon, label, to, search }) => (
               <Link
                 key={label}
                 to={to}
-                className="group inline-flex min-w-[92px] flex-1 flex-col items-center gap-3 text-center transition hover:-translate-y-0.5"
+                search={search}
+                className="group inline-flex min-w-23 flex-1 flex-col items-center gap-3 text-center transition hover:-translate-y-0.5"
               >
                 <span
                   className="flex h-18 w-18 items-center justify-center rounded-full bg-white shadow-[0_16px_30px_rgba(15,23,42,0.08)] transition-colors duration-200 dark:bg-slate-800"
@@ -263,31 +279,35 @@ function Dashboard() {
                 </span>
                 <h3 className="text-sm font-semibold">Spending this week</h3>
               </div>
-              <span className="text-xs text-muted-foreground">Nov 4 – 10</span>
+              <span className="text-xs text-muted-foreground">July 27 – Aug 2</span>
             </div>
 
             <div className="mt-4 flex h-24 items-end justify-between gap-1.5">
-              {[40, 65, 30, 80, 55, 90, 45].map((v, i) => (
-                <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
+              {weeklySpending.map((item, i) => (
+                <div key={item.day} className="flex h-full flex-1 flex-col items-center gap-1.5">
                   <div
-                    className="w-full rounded-t-md bg-muted overflow-hidden flex items-end"
+                    className="w-full rounded-t-md bg-muted overflow-hidden flex items-end h-full"
                     style={{ height: "100%" }}
+                    title={`${item.day}: ₱${item.amount.toLocaleString("en-PH")}`}
+                    aria-label={`${item.day}: ₱${item.amount.toLocaleString("en-PH")}`}
                   >
                     <div
                       className={cn(
                         "w-full rounded-t-md transition-all",
                         i === 5 ? "gradient-emerald" : "bg-brand/70",
                       )}
-                      style={{ height: `${v}%` }}
+                      style={{
+                        height: `${Math.max((item.amount / weeklyMax) * 100, 12)}%`,
+                      }}
                     />
                   </div>
-                  <span className="text-[10px] text-muted-foreground">{"MTWTFSS"[i]}</span>
+                  <span className="text-[10px] text-muted-foreground">{item.short}</span>
                 </div>
               ))}
             </div>
             <div className="mt-3 flex justify-between text-xs">
               <span className="text-muted-foreground">Weekly avg</span>
-              <span className="font-semibold tabular-nums">₱1,284 / day</span>
+              <span className="font-semibold tabular-nums">{formattedWeeklyAverage} / day</span>
             </div>
           </div>
         </section>

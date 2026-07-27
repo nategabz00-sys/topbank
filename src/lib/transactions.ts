@@ -93,3 +93,19 @@ export const transactions: Transaction[] = [
     in: false,
   },
 ];
+
+export type WeeklySpending = {
+  day: string;
+  short: string;
+  amount: number;
+};
+
+export const weeklySpending: WeeklySpending[] = [
+  { day: "Monday", short: "M", amount: 780 },
+  { day: "Tuesday", short: "T", amount: 1450 },
+  { day: "Wednesday", short: "W", amount: 920 },
+  { day: "Thursday", short: "T", amount: 610 },
+  { day: "Friday", short: "F", amount: 1310 },
+  { day: "Saturday", short: "S", amount: 1780 },
+  { day: "Sunday", short: "S", amount: 1040 },
+];
