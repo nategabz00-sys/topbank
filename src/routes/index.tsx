@@ -66,8 +66,12 @@ function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-      style={{ boxShadow: "0 6px 18px rgba(15, 23, 42, 0.08)" }}
+      className="relative flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+      style={{
+        backgroundColor: theme === "dark" ? "#4B5563" : "#FFFFFF",
+        color: theme === "dark" ? "#E5E7EB" : "#6B7280",
+        boxShadow: theme === "dark" ? "none" : "0 6px 18px rgba(15, 23, 42, 0.08)",
+      }}
     >
       {theme === "dark" ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
     </button>
@@ -75,6 +79,7 @@ function ThemeToggle() {
 }
 
 function Dashboard() {
+  const { theme } = useTheme();
   const [hidden, setHidden] = useState(false);
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const slideWidthRef = useRef(0);
@@ -203,10 +208,13 @@ function Dashboard() {
                 <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald ring-2 ring-white" />
               </div>
               <div>
-                <p className="text-sm" style={{ color: "#8A8A8A" }}>
+                <p className="text-sm" style={{ color: theme === "dark" ? "#A0A0A0" : "#8A8A8A" }}>
                   Welcome back
                 </p>
-                <h2 className="text-lg font-bold" style={{ color: "#1F2937" }}>
+                <h2
+                  className="text-lg font-bold"
+                  style={{ color: theme === "dark" ? "#FFFFFF" : "#1F2937" }}
+                >
                   {currentUser.name.split(" ").slice(0, 2).join(" ")}
                 </h2>
               </div>
@@ -335,7 +343,13 @@ function Dashboard() {
                   className="flex h-18 w-18 items-center justify-center rounded-full bg-white shadow-[0_16px_30px_rgba(15,23,42,0.08)] transition-colors duration-200 dark:bg-slate-800"
                   style={{ minWidth: 72, minHeight: 72 }}
                 >
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F4E8DA] text-black shadow-sm dark:bg-slate-700 dark:text-black">
+                  <span
+                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F4E8DA] text-black shadow-sm"
+                    style={{
+                      backgroundColor: theme === "dark" ? "#475569" : "#F4E8DA",
+                      color: theme === "dark" ? "#FFFFFF" : "#000000",
+                    }}
+                  >
                     <Icon className="h-5.5 w-5.5" strokeWidth={2.2} />
                   </span>
                 </span>
